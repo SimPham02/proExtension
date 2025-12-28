@@ -1,0 +1,18 @@
+<div>
+        <button id="createMailBtn">Tạo mail ảo mới</button>
+        <button id="downloadMailBtn" style="display:none;">Tải mail về</button>
+        <div id="mailInfo" style="margin-top:10px;"></div>
+        <div id="mailList" style="margin-top:16px;"></div>
+</div>
+<!-- Modal đọc nội dung mail -->
+<div id="mailModal" style="display:none;position:fixed;z-index:9999;left:0;top:0;width:100vw;height:100vh;background:rgba(0,0,0,0.25);align-items:center;justify-content:center;">
+    <div style="background:#fff;max-width:420px;width:90vw;padding:18px 20px 16px 20px;border-radius:10px;box-shadow:0 2px 16px #0002;position:relative;">
+        <button id="closeMailModal" style="position:absolute;top:8px;right:12px;font-size:20px;background:none;border:none;cursor:pointer;color:#e53935;font-weight:bold;transition:color 0.2s;">×</button>
+        <style>
+        #closeMailModal:hover { color: #b71c1c; }
+        </style>
+        <div id="modalMailSubject" style="font-weight:600;font-size:1.1em;margin-bottom:6px;"></div>
+        <div id="modalMailFrom" style="color:#666;font-size:0.97em;margin-bottom:10px;"></div>
+        <div id="modalMailText" style="white-space:pre-wrap;font-size:1em;"></div>
+    </div>
+</div>

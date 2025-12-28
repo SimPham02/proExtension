@@ -1,0 +1,25 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=480, initial-scale=1.0">
+    <title>Pro Extensions</title>
+    <link rel="stylesheet" href="features/gmail-generator/style.css">
+    <style>
+        html, body { min-width: 420px !important; min-height: 340px !important; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h2>Pro Extensions</h2>
+        <div style="margin-bottom: 18px;">
+            <label for="featureSelect" style="font-weight:500;">Chọn chức năng:</label>
+            <select id="featureSelect" style="margin-left:10px; padding:5px 12px; border-radius:6px; border:1px solid #dbeafe;">
+                <option value="none">-- Chọn chức năng --</option>
+            </select>
+        </div>
+        <div id="feature-content"></div>
+    </div>
+    <script type="module" src="popup.js"></script>
+</body>
+</html>
