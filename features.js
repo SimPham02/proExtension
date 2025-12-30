@@ -40,8 +40,8 @@ export const FEATURES = [
     icon: 'fa-solid fa-font',
     ui: 'features/yaytext/ui.html',
     logic: async () => (await import('./features/yaytext/logic.js'))
-  }
-  ,{
+  },
+  {
     key: 'translate',
     name: 'Dịch nhanh',
     icon: 'fa-solid fa-language',
