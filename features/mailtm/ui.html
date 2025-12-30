@@ -1,18 +1,21 @@
 <div>
+    <h3>Temp Mail (Mail.tm)</h3>
+    <div style="display: flex; gap: 10px; margin-bottom: 1rem;">
         <button id="createMailBtn">Tạo mail ảo mới</button>
-        <button id="downloadMailBtn" style="display:none;">Tải mail về</button>
-        <div id="mailInfo" style="margin-top:10px;"></div>
-        <div id="mailList" style="margin-top:16px;"></div>
+        <button id="downloadMailBtn" style="display:none; background: var(--hover-bg); color: var(--text-primary); border: 1px solid var(--border-color);">Tải về</button>
+    </div>
+    
+    <div id="mailInfo" class="output-box" style="margin-bottom: 1rem; display:none;"></div>
+    <div id="mailList" style="display: flex; flex-direction: column; gap: 8px;"></div>
 </div>
+
 <!-- Modal đọc nội dung mail -->
-<div id="mailModal" style="display:none;position:fixed;z-index:9999;left:0;top:0;width:100vw;height:100vh;background:rgba(0,0,0,0.25);align-items:center;justify-content:center;">
-    <div style="background:#fff;max-width:420px;width:90vw;padding:18px 20px 16px 20px;border-radius:10px;box-shadow:0 2px 16px #0002;position:relative;">
-        <button id="closeMailModal" style="position:absolute;top:8px;right:12px;font-size:20px;background:none;border:none;cursor:pointer;color:#e53935;font-weight:bold;transition:color 0.2s;">×</button>
-        <style>
-        #closeMailModal:hover { color: #b71c1c; }
-        </style>
-        <div id="modalMailSubject" style="font-weight:600;font-size:1.1em;margin-bottom:6px;"></div>
-        <div id="modalMailFrom" style="color:#666;font-size:0.97em;margin-bottom:10px;"></div>
-        <div id="modalMailText" style="white-space:pre-wrap;font-size:1em;"></div>
+<div id="mailModal" style="display:none; position:fixed; z-index:9999; left:0; top:0; width:100%; height:100%; background:rgba(0,0,0,0.8); align-items:center; justify-content:center; backdrop-filter: blur(4px);">
+    <div style="background: var(--card-bg); max-width: 380px; width: 90%; padding: 1.5rem; border-radius: 12px; border: 1px solid var(--border-color); position: relative; box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.5);">
+        <button id="closeMailModal" style="position:absolute; top:12px; right:12px; font-size:24px; background:none; border:none; cursor:pointer; color: var(--text-secondary); line-height: 1;">&times;</button>
+        
+        <div id="modalMailSubject" style="font-weight:700; font-size:1.1rem; margin-bottom:0.5rem; color: var(--accent-color); padding-right: 20px;"></div>
+        <div id="modalMailFrom" style="color: var(--text-secondary); font-size: 0.85rem; margin-bottom: 1rem; border-bottom: 1px solid var(--border-color); padding-bottom: 0.5rem;"></div>
+        <div id="modalMailText" style="white-space:pre-wrap; font-size:0.9rem; color: var(--text-primary); max-height: 300px; overflow-y: auto; padding-right: 5px;"></div>
     </div>
 </div>

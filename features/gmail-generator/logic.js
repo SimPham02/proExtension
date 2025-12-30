@@ -53,10 +53,12 @@ export function initUI() {
             const variants = generateGmailVariants(base);
             if (variants.length === 0) {
                 output.textContent = 'Không thể tạo biến thể với chuỗi này!';
+                output.style.display = 'block';
                 return;
             }
             const randomVariant = variants[Math.floor(Math.random() * variants.length)];
             output.textContent = randomVariant;
+            output.style.display = 'block';
             await copyToClipboard(randomVariant);
             copyStatus.textContent = 'Đã copy biến thể vào clipboard!';
         });

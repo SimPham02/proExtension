@@ -10,7 +10,8 @@ export async function initUI() {
         const len = Math.max(6, Math.min(64, parseInt(passLengthInput.value) || 12));
         const pass = generatePassword(len);
         passResult.textContent = pass;
-        copyBtn.style.display = '';
+        passResult.style.display = 'block';
+        copyBtn.style.display = 'block';
     };
 
     copyBtn.onclick = async () => {

@@ -1,7 +1,13 @@
 <div>
+    <h3>Password Generator</h3>
     <label for="passLength">Độ dài mật khẩu:</label>
-    <input type="number" id="passLength" min="6" max="64" value="12" style="width:60px;margin:0 8px;">
+    <input type="number" id="passLength" min="6" max="64" value="12">
+    
     <button id="genPassBtn">Tạo mật khẩu</button>
-    <div id="passResult" style="margin-top:14px;font-size:1.1em;font-weight:500;"></div>
-    <button id="copyPassBtn" style="display:none;margin-top:8px;">Copy mật khẩu</button>
+    
+    <div id="passResult" class="output-box" style="margin-top:14px; display:none; text-align: center; font-size: 1.1rem;"></div>
+    
+    <button id="copyPassBtn" style="display:none; margin-top:10px; background: var(--hover-bg); color: var(--text-primary); border: 1px solid var(--border-color);">
+        <i class="fa-solid fa-copy"></i> Copy mật khẩu
+    </button>
 </div>

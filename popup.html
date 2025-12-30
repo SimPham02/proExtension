@@ -2,24 +2,36 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=480, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Pro Extensions</title>
-    <link rel="stylesheet" href="features/gmail-generator/style.css">
-    <style>
-        html, body { min-width: 420px !important; min-height: 340px !important; }
-    </style>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="popup.css">
 </head>
 <body>
     <div class="container">
-        <button id="open-favorites" style="float:right; margin-bottom:10px;">Mở trang quản lý bookmark</button>
-        <h2>Pro Extensions</h2>
-        <div style="margin-bottom: 18px;">
-            <label for="featureSelect" style="font-weight:500;">Chọn chức năng:</label>
-            <select id="featureSelect" style="margin-left:10px; padding:5px 12px; border-radius:6px; border:1px solid #dbeafe;">
-                <option value="none">-- Chọn chức năng --</option>
-            </select>
+        <header>
+            <div class="brand">
+                <i class="fa-solid fa-bolt"></i>
+                <span>Pro Extensions</span>
+            </div>
+            <button id="open-favorites" class="btn-icon" title="Bookmark Manager">
+                <i class="fa-solid fa-bookmark"></i>
+            </button>
+        </header>
+
+        <div id="main-view">
+            <div class="feature-grid" id="feature-grid">
+                <!-- Features will be injected here -->
+            </div>
         </div>
-        <div id="feature-content"></div>
+
+        <div id="feature-view" style="display: none;">
+            <div class="back-nav" id="back-to-grid">
+                <i class="fa-solid fa-arrow-left"></i>
+                <span>Back to Features</span>
+            </div>
+            <div id="feature-content"></div>
+        </div>
     </div>
     <script type="module" src="popup.js"></script>
 </body>

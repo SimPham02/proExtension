@@ -1,7 +1,13 @@
 <div>
+    <h3>YayText Styles</h3>
     <label for="yayInput">Nhập đoạn văn bản:</label>
-    <textarea id="yayInput" rows="3" style="width:100%;margin:8px 0;"></textarea>
+    <textarea id="yayInput" rows="3" style="width:100%; background: var(--bg-color); border: 1px solid var(--border-color); border-radius: 6px; padding: 0.6rem; color: var(--text-primary); margin-bottom: 1rem; outline: none;"></textarea>
+    
     <button id="yayRenderBtn">Chuyển đổi kiểu chữ</button>
-    <div id="yayResult" style="margin-top:18px;min-height:32px;font-size:1.2em;font-family:'Noto Sans Symbols','Segoe UI Symbol','Arial Unicode MS',sans-serif;"></div>
-    <button id="yayCopyBtn" style="display:none;margin-top:8px;">Copy kết quả</button>
+    
+    <div id="yayResult" class="output-box" style="margin-top:18px; min-height:32px; display:none; font-size: 1.1rem;"></div>
+    
+    <button id="yayCopyBtn" style="display:none; margin-top:10px; background: var(--hover-bg); color: var(--text-primary); border: 1px solid var(--border-color);">
+        <i class="fa-solid fa-copy"></i> Copy kết quả
+    </button>
 </div>

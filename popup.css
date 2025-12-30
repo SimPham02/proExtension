@@ -1,0 +1,214 @@
+:root {
+    --bg-color: #0f172a;
+    --card-bg: #1e293b;
+    --accent-color: #38bdf8;
+    --text-primary: #f8fafc;
+    --text-secondary: #94a3b8;
+    --hover-bg: #334155;
+    --border-color: rgba(255, 255, 255, 0.1);
+    --transition: all 0.2s ease;
+}
+
+* {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+}
+
+body {
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    background-color: var(--bg-color);
+    color: var(--text-primary);
+    width: 420px;
+    min-height: 450px;
+    overflow-x: hidden;
+}
+
+.container {
+    padding: 1.25rem;
+}
+
+header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 1.5rem;
+    padding-bottom: 1rem;
+    border-bottom: 1px solid var(--border-color);
+}
+
+.brand {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-size: 1.1rem;
+    font-weight: 700;
+    color: var(--accent-color);
+}
+
+.btn-icon {
+    background: var(--card-bg);
+    border: 1px solid var(--border-color);
+    color: var(--text-primary);
+    width: 36px;
+    height: 36px;
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: var(--transition);
+}
+
+.btn-icon:hover {
+    background: var(--hover-bg);
+    border-color: var(--accent-color);
+    color: var(--accent-color);
+}
+
+/* Feature Grid */
+.feature-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 0.75rem;
+    margin-bottom: 1.5rem;
+}
+
+.feature-card {
+    background: var(--card-bg);
+    border: 1px solid var(--border-color);
+    border-radius: 12px;
+    padding: 1rem;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.5rem;
+    cursor: pointer;
+    transition: var(--transition);
+    text-align: center;
+}
+
+.feature-card i {
+    font-size: 1.5rem;
+    color: var(--accent-color);
+    margin-bottom: 0.25rem;
+}
+
+.feature-card span {
+    font-size: 0.85rem;
+    font-weight: 500;
+    color: var(--text-secondary);
+}
+
+.feature-card:hover {
+    transform: translateY(-2px);
+    background: var(--hover-bg);
+    border-color: var(--accent-color);
+}
+
+.feature-card:hover span {
+    color: var(--text-primary);
+}
+
+.feature-card.active {
+    background: rgba(56, 189, 248, 0.1);
+    border-color: var(--accent-color);
+}
+
+.feature-card.active span {
+    color: var(--accent-color);
+}
+
+/* Feature Content Area */
+#feature-content {
+    background: var(--card-bg);
+    border: 1px solid var(--border-color);
+    border-radius: 12px;
+    padding: 1.25rem;
+    display: none; /* Hidden until a feature is selected */
+    animation: fadeIn 0.3s ease;
+}
+
+#feature-content.active {
+    display: block;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(10px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+/* Back button for feature view */
+.back-nav {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    margin-bottom: 1rem;
+    cursor: pointer;
+    color: var(--text-secondary);
+    font-size: 0.9rem;
+    transition: var(--transition);
+}
+
+.back-nav:hover {
+    color: var(--accent-color);
+}
+
+/* Common styles for feature UIs inside the popup */
+#feature-content h3 {
+    font-size: 1.1rem;
+    margin-bottom: 1rem;
+    color: var(--accent-color);
+}
+
+#feature-content label {
+    display: block;
+    font-size: 0.85rem;
+    color: var(--text-secondary);
+    margin-bottom: 0.5rem;
+}
+
+#feature-content input, 
+#feature-content select {
+    width: 100%;
+    background: var(--bg-color);
+    border: 1px solid var(--border-color);
+    border-radius: 6px;
+    padding: 0.6rem 0.75rem;
+    color: var(--text-primary);
+    font-size: 0.9rem;
+    margin-bottom: 1rem;
+    outline: none;
+}
+
+#feature-content input:focus {
+    border-color: var(--accent-color);
+}
+
+#feature-content button {
+    width: 100%;
+    background: var(--accent-color);
+    color: var(--bg-color);
+    border: none;
+    border-radius: 6px;
+    padding: 0.75rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: var(--transition);
+}
+
+#feature-content button:hover {
+    filter: brightness(1.1);
+}
+
+.output-box {
+    margin-top: 1rem;
+    padding: 0.75rem;
+    background: rgba(0, 0, 0, 0.2);
+    border-radius: 6px;
+    border: 1px dashed var(--border-color);
+    font-family: monospace;
+    font-size: 0.9rem;
+    word-break: break-all;
+    color: #10b981;
+}

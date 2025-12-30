@@ -27,6 +27,7 @@ export async function initUI() {
         const amount = parseFloat(amountInput.value) || 0;
         const from = fromSelect.value;
         const to = toSelect.value;
+        resultDiv.style.display = 'block';
         if (amount <= 0) {
             resultDiv.textContent = 'Số tiền phải lớn hơn 0';
             return;

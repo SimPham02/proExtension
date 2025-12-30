@@ -381,27 +381,30 @@
         }
         .bookmark-tooltip {
             position: absolute;
-            bottom: 100%;
-            left: 0;
-            width: 100%;
+            bottom: calc(100% + 8px);
+            left: 12px;
+            right: 12px;
+            width: auto;
+            max-width: calc(100vw - 360px);
             background: #1e293b;
             border: 1px solid var(--accent-color);
             border-radius: 0.5rem;
-            padding: 0.75rem;
-            font-size: 0.85rem;
+            padding: 0.6rem 0.75rem;
+            font-size: 0.9rem;
             color: #fff;
-            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.5);
-            z-index: 100;
+            box-shadow: 0 10px 24px -6px rgba(0, 0, 0, 0.6);
+            z-index: 120;
             pointer-events: none;
             opacity: 0;
-            transform: translateY(10px);
-            transition: opacity 0.3s ease, transform 0.3s ease;
-            transition-delay: 0.4s; /* Delay to prevent flickering */
+            transform: translateY(4px);
+            transition: opacity 0.16s ease, transform 0.16s ease;
+            transition-delay: 0.12s; /* reduced delay for snappier tooltip */
             word-break: break-word;
+            white-space: normal;
         }
         .full-title-mode .bookmark-card:hover .bookmark-tooltip {
             opacity: 1;
-            transform: translateY(-5px);
+            transform: translateY(0);
         }
         
         /* Hide old hover mode */
@@ -473,7 +476,7 @@
             transition: var(--transition);
             border: 1px solid rgba(255, 255, 255, 0.05);
             position: relative;
-            overflow: hidden;
+            overflow: visible;
         }
 
         .bookmark-card::before {

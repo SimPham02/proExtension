@@ -1,9 +1,14 @@
 <div>
+    <h3>Currency Converter</h3>
     <label for="amount">Số tiền:</label>
-    <input type="number" id="amount" value="1" min="0" style="width:90px;margin:0 8px;">
-    <select id="fromCurrency"></select>
-    <span style="margin:0 8px;">→</span>
-    <select id="toCurrency"></select>
+    <input type="number" id="amount" value="1" min="0">
+    
+    <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 1rem;">
+        <select id="fromCurrency" style="margin-bottom: 0;"></select>
+        <i class="fa-solid fa-arrow-right" style="color: var(--text-secondary);"></i>
+        <select id="toCurrency" style="margin-bottom: 0;"></select>
+    </div>
+
     <button id="convertBtn">Chuyển đổi</button>
-    <div id="convertResult" style="margin-top:14px;font-size:1.1em;font-weight:500;"></div>
+    <div id="convertResult" class="output-box" style="margin-top:14px; display:none; text-align: center; font-size: 1.1rem;"></div>
 </div>

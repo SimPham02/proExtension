@@ -19,13 +19,15 @@ export async function initUI() {
         const text = input.value;
         if (!text) {
             result.innerHTML = '<i>Vui lòng nhập văn bản.</i>';
+            result.style.display = 'block';
             copyBtn.style.display = 'none';
             return;
         }
         // Chỉ lấy kiểu "Gạch chân"
         const underline = yayStyles[2];
         result.innerHTML = `<div style=\"margin-bottom:8px;\"><b>${underline.name}:</b> <span style=\"user-select:all;\">${[...text].map(underline.map).join('')}</span></div>`;
-        copyBtn.style.display = '';
+        result.style.display = 'block';
+        copyBtn.style.display = 'block';
     };
 
     copyBtn.onclick = async () => {

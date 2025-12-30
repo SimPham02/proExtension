@@ -39,6 +39,7 @@ export async function initUI() {
 
     createBtn.onclick = async () => {
         mailInfo.textContent = 'Đang tạo mail ảo...';
+        mailInfo.style.display = 'block';
         mailList.innerHTML = '';
         downloadBtn.style.display = 'none';
         await createMailAccount();
@@ -94,7 +95,8 @@ function showAccountInfo() {
     const downloadBtn = document.getElementById('downloadMailBtn');
     if (currentAccount) {
         mailInfo.innerHTML = `<b>Mail ảo:</b> ${currentAccount.address}<br><b>Password:</b> ${currentAccount.password}`;
-        downloadBtn.style.display = '';
+        mailInfo.style.display = 'block';
+        downloadBtn.style.display = 'block';
     }
 }
 
@@ -111,10 +113,10 @@ async function fetchAndShowMails() {
         return;
     }
     mailList.innerHTML = data['hydra:member'].map(m =>
-        `<div style="margin-bottom:10px;">
-            <b>${m.from && m.from.address ? m.from.address : ''}</b><br>
-            <span>${m.subject}</span><br>
-            <button class="viewMailBtn" data-mailid="${m.id}">Xem nội dung</button>
+        `<div style="background: var(--bg-color); border: 1px solid var(--border-color); padding: 10px; border-radius: 8px; display: flex; flex-direction: column; gap: 5px;">
+            <div style="font-weight: 600; font-size: 0.9rem; color: var(--accent-color); white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${m.from && m.from.address ? m.from.address : ''}</div>
+            <div style="font-size: 0.85rem; color: var(--text-primary); white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${m.subject}</div>
+            <button class="viewMailBtn" data-mailid="${m.id}" style="margin-top: 5px; padding: 5px; font-size: 0.8rem; background: var(--hover-bg); color: var(--text-primary); border: 1px solid var(--border-color);">Xem nội dung</button>
         </div>`
     ).join('');
 }
