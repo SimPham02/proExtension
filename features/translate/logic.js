@@ -1,5 +1,3 @@
-// Translate Feature - Inject selection listener to pages
-
 async function injectScriptIfNeeded(tabId) {
   try {
     const [result] = await chrome.scripting.executeScript({

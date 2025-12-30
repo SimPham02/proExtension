@@ -14,15 +14,14 @@
   const container = document.createElement('div');
   container.setAttribute('data-proext-translate', '1');
   Object.assign(container.style, {
-    position: 'fixed', top: '20px', left: '50%', transform: 'translateX(-50%)',
-    zIndex: '2147483647', display: 'none', fontFamily: 'sans-serif'
+    position: 'absolute', zIndex: '2147483647', display: 'none', fontFamily: 'sans-serif'
   });
 
   const card = document.createElement('div');
   Object.assign(card.style, {
     background: 'linear-gradient(180deg, rgba(20,20,20,0.98), rgba(30,30,30,0.98))',
     color: '#fff', padding: '10px 14px', borderRadius: '8px',
-    maxWidth: '600px', minWidth: '200px', boxShadow: '0 8px 30px rgba(0,0,0,0.4)',
+    maxWidth: '400px', minWidth: '150px', boxShadow: '0 8px 30px rgba(0,0,0,0.4)',
     fontSize: '13px', lineHeight: '1.4', display: 'flex', flexDirection: 'column', gap: '8px'
   });
 
@@ -50,7 +49,7 @@
   metaEl.append(btnCopy, btnClose);
   card.append(textEl, metaEl);
   container.appendChild(card);
-  document.documentElement.appendChild(container);
+  document.body.appendChild(container);
 
   // State
   let lastText = '', timer = null, dead = false;
@@ -97,6 +96,45 @@
     } catch { return null; }
   };
 
+  // Position container near selection
+  const positionNearSelection = () => {
+    const sel = window.getSelection();
+    if (!sel || sel.rangeCount === 0) return;
+    
+    const range = sel.getRangeAt(0);
+    const rect = range.getBoundingClientRect();
+    
+    const scrollX = window.scrollX || window.pageXOffset;
+    const scrollY = window.scrollY || window.pageYOffset;
+    
+    // Position below selection by default
+    let top = rect.bottom + scrollY + 8;
+    let left = rect.left + scrollX;
+    
+    // Make sure container is visible first to get its dimensions
+    container.style.display = 'block';
+    container.style.visibility = 'hidden';
+    const containerRect = container.getBoundingClientRect();
+    container.style.visibility = 'visible';
+    
+    // Check if it goes below viewport, if so position above
+    if (rect.bottom + containerRect.height + 20 > window.innerHeight) {
+      top = rect.top + scrollY - containerRect.height - 8;
+    }
+    
+    // Keep within horizontal bounds
+    if (left + containerRect.width > window.innerWidth + scrollX - 10) {
+      left = window.innerWidth + scrollX - containerRect.width - 10;
+    }
+    if (left < scrollX + 10) left = scrollX + 10;
+    
+    // Keep within vertical bounds
+    if (top < scrollY + 10) top = scrollY + 10;
+    
+    container.style.top = top + 'px';
+    container.style.left = left + 'px';
+  };
+
   // Handle selection
   const handle = async () => {
     try {
@@ -117,7 +155,7 @@
       if (s?.pro_translate_lang === 'none') { container.style.display = 'none'; return; }
 
       textEl.textContent = 'Đang dịch...';
-      container.style.display = 'block';
+      positionNearSelection();
 
       const out = await translate(txt);
       textEl.textContent = out ?? 'Không dịch được';
@@ -126,9 +164,20 @@
 
   const schedule = () => { clearTimeout(timer); timer = setTimeout(handle, 200); };
 
-  // Events
-  document.addEventListener('mouseup', schedule);
-  document.addEventListener('keyup', schedule);
+  // Events - only add if translation is enabled
+  const setupListeners = async () => {
+    const s = await getSettings();
+    if (s?.pro_translate_lang === 'none') {
+      container.style.display = 'none';
+      return; // Don't add listeners if translation disabled
+    }
+    
+    document.addEventListener('mouseup', schedule);
+    document.addEventListener('keyup', schedule);
+  };
+  
+  setupListeners();
+  
   btnCopy.onclick = () => navigator.clipboard?.writeText(textEl.textContent || '').catch(() => {});
   btnClose.onclick = () => container.style.display = 'none';
   document.addEventListener('click', e => { if (!container.contains(e.target)) container.style.display = 'none'; });

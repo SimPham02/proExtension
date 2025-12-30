@@ -2,13 +2,12 @@
 
 let allBookmarksFlat = [];
 let currentFolderId = null;
-let currentViewMode = 'grid'; // 'grid' or 'list'
-let currentSortMode = 'name'; // 'name', 'date', 'url'
-let currentNodes = []; // Currently displayed nodes
+let currentViewMode = 'grid'; 
+let currentSortMode = 'name';
+let currentNodes = [];
 let selectedIds = new Set();
-let currentSearchMode = 'flat'; // 'flat' or 'grouped'
+let currentSearchMode = 'flat'; 
 
-// Helper to get high-quality favicon
 function getFavicon(url) {
     try {
         const domain = new URL(url).hostname;
@@ -18,7 +17,6 @@ function getFavicon(url) {
     }
 }
 
-// Selection logic
 function toggleSelection(id, e) {
     if (e) e.stopPropagation();
     if (selectedIds.has(id)) selectedIds.delete(id);
@@ -71,7 +69,6 @@ function createCard(node) {
         </div>
     `;
 
-    // Selection event
     const selectionBtn = card.querySelector('.selection-indicator');
     selectionBtn.onclick = (e) => {
         e.stopPropagation();
@@ -91,7 +88,6 @@ function createCard(node) {
     return card;
 }
 
-// Breadcrumbs logic
 function updateBreadcrumbs(folderId) {
     const container = document.getElementById('breadcrumbs');
     if (!container) return;
@@ -159,7 +155,6 @@ function navigateToFolder(id, title) {
         });
     }
 
-    // Update sidebar active state
     document.querySelectorAll('.folder-item').forEach(el => {
         if (el.dataset.id === id) el.classList.add('active');
         else el.classList.remove('active');
@@ -169,7 +164,6 @@ function navigateToFolder(id, title) {
 function sortNodes(nodes) {
     const sorted = [...nodes];
     sorted.sort((a, b) => {
-        // Folders always come first
         if (a.children && !b.children) return -1;
         if (!a.children && b.children) return 1;
 
@@ -192,7 +186,6 @@ function renderBookmarks(nodes, isSearch = false) {
     
     grid.innerHTML = '';
     
-    // Apply view mode
     grid.className = `bookmarks-grid ${currentViewMode}-view`;
     
     if (!isSearch) updateBreadcrumbs(currentFolderId);
@@ -229,7 +222,6 @@ function renderBookmarks(nodes, isSearch = false) {
     }
 }
 
-// Recursive function to build folder tree
 function buildTree(nodes, container, depth = 0) {
     const ul = document.createElement('ul');
     ul.className = depth === 0 ? 'folder-tree' : 'sub-tree';
@@ -274,11 +266,9 @@ function buildTree(nodes, container, depth = 0) {
     container.appendChild(ul);
 }
 
-// Flatten bookmarks for global search
+
 function flatten(nodes, arr = [], parentTitle = 'All Bookmarks') {
     nodes.forEach(node => {
-        // Include both bookmarks (node.url) and folders (node.children)
-        // Skip the root node which usually has no title or id '0'
         if (node.title && node.id !== '0') {
             node.parentTitle = parentTitle;
             arr.push(node);
@@ -302,17 +292,13 @@ function init() {
             const treeContainer = document.getElementById('folder-tree-container');
             if (treeContainer) treeContainer.innerHTML = '';
 
-            // Build the tree
             buildTree(root.children, treeContainer);
 
-            // Prepare data
             allBookmarksFlat = flatten(tree);
-            
-            // Default view: Show top-level folders instead of everything flattened
+
             currentNodes = root.children; 
             renderBookmarks(currentNodes);
 
-            // Tools Menu
             const toolsBtn = document.getElementById('tools-btn');
             const toolsMenu = document.getElementById('tools-menu');
             if (toolsBtn && toolsMenu) {
@@ -329,7 +315,7 @@ function init() {
                 findDupsBtn.onclick = () => {
                     const seen = new Map();
                     const dups = allBookmarksFlat.filter(bm => {
-                        if (!bm.url) return false; // Skip folders
+                        if (!bm.url) return false; 
                         if (seen.has(bm.url)) return true;
                         seen.set(bm.url, true);
                         return false;
@@ -343,7 +329,6 @@ function init() {
                 };
             }
 
-            // Export JSON
             const exportBtn = document.getElementById('export-json-btn');
             if (exportBtn) {
                 exportBtn.onclick = () => {
@@ -356,7 +341,6 @@ function init() {
                 };
             }
 
-            // Bulk Actions
             const bulkCancelBtn = document.getElementById('bulk-cancel-btn');
             if (bulkCancelBtn) {
                 bulkCancelBtn.onclick = () => {
@@ -378,7 +362,7 @@ function init() {
                                 if (deleted === ids.length) {
                                     selectedIds.clear();
                                     updateSelectionToolbar();
-                                    location.reload(); // Refresh to sync
+                                    location.reload();
                                 }
                             });
                         });
@@ -386,15 +370,12 @@ function init() {
                 };
             }
 
-            // Keyboard Shortcuts
             document.addEventListener('keydown', (e) => {
-                // Ctrl+K to search
                 if ((e.ctrlKey || e.metaKey) && e.key === 'k') {
                     e.preventDefault();
                     const searchInput = document.getElementById('search-input');
                     if (searchInput) searchInput.focus();
                 }
-                // Escape to clear selection
                 if (e.key === 'Escape' && selectedIds.size > 0) {
                     selectedIds.clear();
                     updateSelectionToolbar();
@@ -402,7 +383,6 @@ function init() {
                 }
             });
 
-            // Sidebar Search
             const sidebarSearch = document.getElementById('sidebar-search-input');
             if (sidebarSearch) {
                 sidebarSearch.addEventListener('input', (e) => {
@@ -411,7 +391,6 @@ function init() {
                         const title = item.dataset.title || '';
                         if (title.includes(query)) {
                             item.style.display = 'flex';
-                            // If searching, expand parents
                             if (query.length > 0) {
                                 let parent = item.parentElement.closest('.sub-tree');
                                 while (parent) {
@@ -427,7 +406,6 @@ function init() {
                 });
             }
 
-            // Main Search
             const mainSearch = document.getElementById('search-input');
             const searchModeBtn = document.getElementById('search-mode-btn');
 
@@ -441,8 +419,7 @@ function init() {
                     if (span) {
                         span.textContent = currentSearchMode === 'grouped' ? 'Grouped' : 'Flat View';
                     }
-                    
-                    // Re-trigger search if there's a query
+
                     if (mainSearch && mainSearch.value) {
                         mainSearch.dispatchEvent(new Event('input'));
                     }
@@ -464,7 +441,6 @@ function init() {
                 });
             }
 
-            // View Toggles
             const gridBtn = document.getElementById('grid-view-btn');
             const listBtn = document.getElementById('list-view-btn');
             if (gridBtn) {
@@ -486,7 +462,6 @@ function init() {
                 };
             }
 
-            // Sort Select
             const sortSelect = document.getElementById('sort-select');
             if (sortSelect) {
                 sortSelect.onchange = (e) => {
@@ -496,7 +471,6 @@ function init() {
                 };
             }
 
-            // Tooltip Toggle
             const tooltipToggle = document.getElementById('tooltip-toggle');
             if (tooltipToggle) {
                 tooltipToggle.addEventListener('change', () => {
@@ -506,11 +480,9 @@ function init() {
                         document.body.classList.remove('full-title-mode');
                     }
                 });
-                // Initial state
                 if (tooltipToggle.checked) document.body.classList.add('full-title-mode');
             }
 
-            // All Bookmarks button
             const allBookmarksBtn = document.getElementById('all-bookmarks-btn');
             if (allBookmarksBtn) {
                 allBookmarksBtn.onclick = () => navigateToFolder(null);
