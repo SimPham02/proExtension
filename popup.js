@@ -2,6 +2,13 @@
 import { FEATURES } from './features.js';
 
 document.addEventListener('DOMContentLoaded', function() {
+    // Nút mở trang quản lý bookmark
+    const openFavBtn = document.getElementById('open-favorites');
+    if (openFavBtn) {
+        openFavBtn.addEventListener('click', () => {
+            window.open('favorites.html', '_blank');
+        });
+    }
     const featureSelect = document.getElementById('featureSelect');
     const featureContent = document.getElementById('feature-content');
 
