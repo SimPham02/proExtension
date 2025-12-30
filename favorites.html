@@ -166,6 +166,58 @@
             position: relative;
             flex: 1;
             max-width: 500px;
+            display: flex;
+            align-items: center;
+        }
+
+        .search-mode-btn {
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            color: var(--text-secondary);
+            cursor: pointer;
+            padding: 0.5rem 1rem;
+            border-radius: 8px;
+            transition: var(--transition);
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            font-size: 0.85rem;
+            font-weight: 500;
+        }
+
+        .search-mode-btn i {
+            font-size: 0.9rem;
+        }
+
+        .search-mode-btn:hover {
+            color: var(--accent-color);
+            background: rgba(255, 255, 255, 0.1);
+            border-color: rgba(56, 189, 248, 0.3);
+        }
+
+        .search-mode-btn.active {
+            color: var(--accent-color);
+            background: rgba(56, 189, 248, 0.1);
+            border-color: var(--accent-color);
+        }
+
+        .search-group-header {
+            grid-column: 1 / -1;
+            padding: 1.5rem 0 0.75rem 0;
+            font-size: 0.85rem;
+            font-weight: 700;
+            color: var(--accent-color);
+            border-bottom: 1px solid rgba(56, 189, 248, 0.2);
+            margin-bottom: 0.5rem;
+            display: flex;
+            align-items: center;
+            gap: 0.6rem;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+
+        .search-group-header:first-child {
+            padding-top: 0;
         }
 
         .controls {
@@ -200,11 +252,34 @@
             background: rgba(255, 255, 255, 0.05);
             border: 1px solid rgba(255, 255, 255, 0.1);
             color: var(--text-primary);
-            padding: 0.4rem 0.75rem;
-            border-radius: 6px;
+            padding: 0.5rem 2rem 0.5rem 1rem;
+            border-radius: 8px;
             font-size: 0.85rem;
             outline: none;
             cursor: pointer;
+            appearance: none;
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%2394a3b8'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M19 9l-7 7-7-7'%3E%3C/path%3E%3C/svg%3E");
+            background-repeat: no-repeat;
+            background-position: right 0.75rem center;
+            background-size: 1rem;
+            transition: var(--transition);
+            min-width: 140px;
+        }
+
+        .sort-select:hover {
+            background-color: rgba(255, 255, 255, 0.1);
+            border-color: rgba(56, 189, 248, 0.3);
+        }
+
+        .sort-select:focus {
+            border-color: var(--accent-color);
+            box-shadow: 0 0 0 2px rgba(56, 189, 248, 0.2);
+        }
+
+        .sort-select option {
+            background-color: var(--sidebar-bg);
+            color: var(--text-primary);
+            padding: 10px;
         }
 
         .toggle-container {
@@ -581,6 +656,155 @@
             background: rgba(255, 255, 255, 0.2);
         }
 
+        /* Selection & Bulk Actions */
+        .selection-toolbar {
+            position: fixed;
+            bottom: 2rem;
+            left: 50%;
+            transform: translateX(-50%) translateY(100px);
+            background: var(--accent-color);
+            color: var(--bg-color);
+            padding: 0.75rem 1.5rem;
+            border-radius: 1rem;
+            display: flex;
+            align-items: center;
+            gap: 1.5rem;
+            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.5);
+            z-index: 1000;
+            transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .selection-toolbar.active {
+            transform: translateX(-50%) translateY(0);
+        }
+
+        .toolbar-info {
+            font-weight: 700;
+            font-size: 0.9rem;
+            border-right: 1px solid rgba(15, 23, 42, 0.2);
+            padding-right: 1.5rem;
+        }
+
+        .toolbar-actions {
+            display: flex;
+            gap: 1rem;
+        }
+
+        .toolbar-btn {
+            background: transparent;
+            border: none;
+            color: var(--bg-color);
+            cursor: pointer;
+            font-weight: 600;
+            font-size: 0.85rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.4rem 0.75rem;
+            border-radius: 0.5rem;
+            transition: background 0.2s;
+        }
+
+        .toolbar-btn:hover {
+            background: rgba(15, 23, 42, 0.1);
+        }
+
+        /* Selection Feature */
+        .selection-indicator {
+            position: absolute;
+            top: 0.5rem;
+            left: 0.5rem;
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            background: rgba(0, 0, 0, 0.4);
+            border: 1.5px solid rgba(255, 255, 255, 0.6);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            opacity: 0;
+            transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+            z-index: 20;
+            color: white;
+            font-size: 9px;
+        }
+
+        .selection-indicator i {
+            transform: scale(0);
+            transition: transform 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
+
+        .selection-indicator.active {
+            background: var(--accent-color);
+            border-color: var(--accent-color);
+            opacity: 1;
+        }
+
+        .selection-indicator.active i {
+            transform: scale(1);
+        }
+
+        .bookmark-card:hover .selection-indicator,
+        .folder-card:hover .selection-indicator {
+            opacity: 1;
+        }
+
+        .bookmark-card.selected,
+        .folder-card.selected {
+            border-color: var(--accent-color);
+            background: rgba(56, 189, 248, 0.1);
+        }
+
+        .bookmark-card.selected::before,
+        .folder-card.selected::before {
+            opacity: 1;
+        }
+
+        /* Tools Menu */
+        .tools-dropdown {
+            position: relative;
+        }
+
+        .tools-menu {
+            position: absolute;
+            top: 100%;
+            right: 0;
+            background: var(--sidebar-bg);
+            border: 1px solid var(--border-color);
+            border-radius: 0.75rem;
+            padding: 0.5rem;
+            min-width: 180px;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.3);
+            display: none;
+            z-index: 1000;
+            margin-top: 0.5rem;
+        }
+
+        .tools-menu.active {
+            display: block;
+        }
+
+        .tool-item {
+            padding: 0.6rem 1rem;
+            border-radius: 0.5rem;
+            cursor: pointer;
+            font-size: 0.85rem;
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            transition: background 0.2s;
+        }
+
+        .tool-item:hover {
+            background: var(--hover-bg);
+        }
+
+        .tool-item i {
+            width: 16px;
+            color: var(--accent-color);
+        }
+
         @media (max-width: 768px) {
             .sidebar {
                 width: 80px;
@@ -626,6 +850,11 @@
                 <input type="text" id="search-input" class="search-input" placeholder="Search bookmarks and folders...">
             </div>
             
+            <button id="search-mode-btn" class="search-mode-btn" title="Group by Folder">
+                <i class="fa-solid fa-layer-group"></i>
+                <span>Group View</span>
+            </button>
+            
             <div class="controls">
                 <select id="sort-select" class="sort-select">
                     <option value="name">Sort by Name</option>
@@ -649,6 +878,26 @@
                         <span class="slider"></span>
                     </div>
                 </label>
+
+                <div class="tools-dropdown">
+                    <button class="btn-icon" id="tools-btn" title="Tools">
+                        <i class="fa-solid fa-ellipsis-vertical"></i>
+                    </button>
+                    <div class="tools-menu" id="tools-menu">
+                        <div class="tool-item" id="find-duplicates-btn">
+                            <i class="fa-solid fa-clone"></i>
+                            <span>Find Duplicates</span>
+                        </div>
+                        <div class="tool-item" id="export-json-btn">
+                            <i class="fa-solid fa-file-export"></i>
+                            <span>Export JSON</span>
+                        </div>
+                        <div class="tool-item" id="cleanup-btn">
+                            <i class="fa-solid fa-broom"></i>
+                            <span>Cleanup Empty</span>
+                        </div>
+                    </div>
+                </div>
             </div>
         </header>
 
@@ -668,6 +917,22 @@
             </div>
         </section>
     </main>
+
+    <div class="selection-toolbar" id="selection-toolbar">
+        <div class="toolbar-info">
+            <span id="selected-count">0</span> items selected
+        </div>
+        <div class="toolbar-actions">
+            <button class="toolbar-btn" id="bulk-delete-btn">
+                <i class="fa-solid fa-trash"></i>
+                <span>Delete</span>
+            </div>
+            <button class="toolbar-btn" id="bulk-cancel-btn">
+                <i class="fa-solid fa-xmark"></i>
+                <span>Cancel</span>
+            </div>
+        </div>
+    </div>
 
     <script src="favorites.js"></script>
 </body>

@@ -1,0 +1,190 @@
+<div class="save-bookmark-container">
+    <div class="form-group">
+        <label>Bookmark Title</label>
+        <input type="text" id="save-bm-title" class="modern-input" placeholder="Enter title...">
+    </div>
+    
+    <div class="folder-selection-header">
+        <div class="folder-nav">
+            <button id="folder-back-btn" class="back-mini-btn" style="display: none;">
+                <i class="fa-solid fa-chevron-left"></i>
+            </button>
+            <label>Select Folder</label>
+        </div>
+        <span id="selected-folder-path">Bookmark Bar</span>
+    </div>
+
+    <div class="folder-grid" id="save-folder-grid">
+        <!-- Folders will be injected here -->
+    </div>
+
+    <div class="save-footer">
+        <button id="save-bm-confirm" class="btn-primary-large">
+            <i class="fa-solid fa-check"></i> Save to Bookmarks
+        </button>
+    </div>
+</div>
+
+<style>
+    .save-bookmark-container {
+        display: flex;
+        flex-direction: column;
+        gap: 1.25rem;
+        padding: 0.5rem;
+    }
+
+    .modern-input {
+        width: 100%;
+        background: rgba(255, 255, 255, 0.05);
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        color: white;
+        padding: 0.75rem;
+        border-radius: 8px;
+        font-size: 0.9rem;
+        outline: none;
+        transition: border-color 0.2s;
+    }
+
+    .modern-input:focus {
+        border-color: var(--accent-color);
+    }
+
+    .folder-selection-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+
+    .folder-nav {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+
+    .back-mini-btn {
+        background: rgba(255, 255, 255, 0.1);
+        border: none;
+        color: white;
+        width: 24px;
+        height: 24px;
+        border-radius: 4px;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 0.7rem;
+    }
+
+    .back-mini-btn:hover {
+        background: rgba(255, 255, 255, 0.2);
+    }
+
+    .folder-selection-header label {
+        font-size: 0.75rem;
+        font-weight: 700;
+        color: var(--text-secondary);
+        text-transform: uppercase;
+    }
+
+    #selected-folder-path {
+        font-size: 0.75rem;
+        color: var(--accent-color);
+        background: rgba(56, 189, 248, 0.1);
+        padding: 2px 8px;
+        border-radius: 4px;
+    }
+
+    .folder-grid {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 0.75rem;
+        max-height: 200px;
+        overflow-y: auto;
+        padding-right: 4px;
+    }
+
+    .folder-grid::-webkit-scrollbar {
+        width: 4px;
+    }
+
+    .folder-grid::-webkit-scrollbar-thumb {
+        background: rgba(255, 255, 255, 0.1);
+        border-radius: 10px;
+    }
+
+    .folder-item-card {
+        background: rgba(255, 255, 255, 0.03);
+        border: 1px solid rgba(255, 255, 255, 0.05);
+        border-radius: 10px;
+        padding: 0.75rem 0.5rem;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 0.4rem;
+        cursor: pointer;
+        transition: all 0.2s;
+        text-align: center;
+        position: relative;
+    }
+
+    .folder-item-card i {
+        font-size: 1.2rem;
+        color: #eab308;
+    }
+
+    .folder-item-card span {
+        font-size: 0.7rem;
+        color: var(--text-secondary);
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        width: 100%;
+    }
+
+    .folder-item-card:hover {
+        background: rgba(255, 255, 255, 0.08);
+        border-color: var(--accent-color);
+        transform: translateY(-2px);
+    }
+
+    .folder-item-card.active {
+        background: rgba(56, 189, 248, 0.15);
+        border-color: var(--accent-color);
+        box-shadow: 0 0 0 2px rgba(56, 189, 248, 0.2);
+    }
+
+    .folder-item-card.active i {
+        color: var(--accent-color);
+    }
+
+    .folder-item-card.active span {
+        color: white;
+        font-weight: 600;
+    }
+
+    .btn-primary-large {
+        width: 100%;
+        background: var(--accent-color);
+        color: var(--bg-color);
+        border: none;
+        padding: 0.85rem;
+        border-radius: 10px;
+        font-weight: 700;
+        font-size: 0.95rem;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 0.5rem;
+        transition: transform 0.2s, filter 0.2s;
+    }
+
+    .btn-primary-large:hover {
+        filter: brightness(1.1);
+        transform: translateY(-1px);
+    }
+
+    .btn-primary-large:active {
+        transform: translateY(0);
+    }
+</style>

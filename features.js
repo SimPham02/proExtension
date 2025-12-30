@@ -1,14 +1,21 @@
 export const FEATURES = [
   {
+    key: 'save-bookmark',
+    name: 'Save Bookmark',
+    icon: 'fa-solid fa-plus-circle',
+    ui: 'features/save-bookmark/ui.html',
+    logic: async () => (await import('./features/save-bookmark/logic.js'))
+  },
+  {
     key: 'currency-convert',
-    name: 'Currency Converter',
+    name: 'Đổi tiền tệ',
     icon: 'fa-solid fa-money-bill-transfer',
     ui: 'features/currency-convert/ui.html',
     logic: async () => (await import('./features/currency-convert/logic.js'))
   },
   {
     key: 'gmail-generator',
-    name: 'Gmail Generator',
+    name: 'Tạo Gmail',
     icon: 'fa-solid fa-envelope-open-text',
     ui: 'features/gmail-generator/ui.html',
     logic: async () => (await import('./features/gmail-generator/logic.js'))
@@ -33,5 +40,12 @@ export const FEATURES = [
     icon: 'fa-solid fa-font',
     ui: 'features/yaytext/ui.html',
     logic: async () => (await import('./features/yaytext/logic.js'))
+  }
+  ,{
+    key: 'translate',
+    name: 'Dịch nhanh',
+    icon: 'fa-solid fa-language',
+    ui: 'features/translate/ui.html',
+    logic: async () => (await import('./features/translate/logic.js'))
   }
 ];

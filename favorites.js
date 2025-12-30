@@ -5,6 +5,8 @@ let currentFolderId = null;
 let currentViewMode = 'grid'; // 'grid' or 'list'
 let currentSortMode = 'name'; // 'name', 'date', 'url'
 let currentNodes = []; // Currently displayed nodes
+let selectedIds = new Set();
+let currentSearchMode = 'flat'; // 'flat' or 'grouped'
 
 // Helper to get high-quality favicon
 function getFavicon(url) {
@@ -16,9 +18,83 @@ function getFavicon(url) {
     }
 }
 
+// Selection logic
+function toggleSelection(id, e) {
+    if (e) e.stopPropagation();
+    if (selectedIds.has(id)) selectedIds.delete(id);
+    else selectedIds.add(id);
+    
+    updateSelectionToolbar();
+}
+
+function updateSelectionToolbar() {
+    const toolbar = document.getElementById('selection-toolbar');
+    const count = document.getElementById('selected-count');
+    if (!toolbar || !count) return;
+    
+    if (selectedIds.size > 0) {
+        toolbar.classList.add('active');
+        count.textContent = selectedIds.size;
+    } else {
+        toolbar.classList.remove('active');
+    }
+}
+
+function createCard(node) {
+    const isFolder = !!node.children || !node.url;
+    const card = document.createElement(isFolder ? 'div' : 'a');
+    card.className = isFolder ? 'folder-card' : 'bookmark-card';
+    if (!isFolder) {
+        card.href = node.url;
+        card.target = '_blank';
+    }
+
+    const isSelected = selectedIds.has(node.id);
+    if (isSelected) card.classList.add('selected');
+
+    card.innerHTML = `
+        <div class="selection-indicator ${isSelected ? 'active' : ''}">
+            <i class="fa-solid fa-check"></i>
+        </div>
+        ${!isFolder ? `<div class="bookmark-tooltip">${node.title}</div>` : ''}
+        ${isFolder ? '<i class="fa-solid fa-folder"></i>' : ''}
+        <div class="${isFolder ? 'card-info' : 'card-top'}">
+            ${!isFolder ? `
+                <div class="favicon-box">
+                    <img src="${getFavicon(node.url)}" alt="" onerror="this.src='https://www.google.com/s2/favicons?domain=example.com'">
+                </div>
+            ` : ''}
+            <div class="card-info">
+                <div class="card-title">${node.title || 'Untitled'}</div>
+                <div class="card-url">${isFolder ? (node.children ? node.children.length : '0') + ' items' : node.url}</div>
+            </div>
+        </div>
+    `;
+
+    // Selection event
+    const selectionBtn = card.querySelector('.selection-indicator');
+    selectionBtn.onclick = (e) => {
+        e.stopPropagation();
+        e.preventDefault();
+        toggleSelection(node.id);
+        card.classList.toggle('selected');
+        selectionBtn.classList.toggle('active');
+    };
+
+    if (isFolder) {
+        card.onclick = (e) => {
+            if (e.target.closest('.selection-indicator')) return;
+            navigateToFolder(node.id, node.title);
+        };
+    }
+
+    return card;
+}
+
 // Breadcrumbs logic
 function updateBreadcrumbs(folderId) {
     const container = document.getElementById('breadcrumbs');
+    if (!container) return;
     container.innerHTML = '';
     
     if (!folderId) {
@@ -68,11 +144,14 @@ function updateBreadcrumbs(folderId) {
 
 function navigateToFolder(id, title) {
     currentFolderId = id;
-    document.getElementById('current-folder-name').textContent = title || 'All Bookmarks';
+    const folderNameEl = document.getElementById('current-folder-name');
+    if (folderNameEl) folderNameEl.textContent = title || 'All Bookmarks';
     
     if (!id) {
-        currentNodes = allBookmarksFlat;
-        renderBookmarks(currentNodes);
+        chrome.bookmarks.getTree(function(tree) {
+            currentNodes = tree[0].children;
+            renderBookmarks(currentNodes);
+        });
     } else {
         chrome.bookmarks.getSubTree(id, (sub) => {
             currentNodes = sub[0].children;
@@ -106,60 +185,48 @@ function sortNodes(nodes) {
     return sorted;
 }
 
-function renderBookmarks(nodes) {
+function renderBookmarks(nodes, isSearch = false) {
     const grid = document.getElementById('bookmarks-grid');
     const emptyMsg = document.getElementById('empty-msg');
+    if (!grid) return;
+    
     grid.innerHTML = '';
     
     // Apply view mode
     grid.className = `bookmarks-grid ${currentViewMode}-view`;
     
-    updateBreadcrumbs(currentFolderId);
+    if (!isSearch) updateBreadcrumbs(currentFolderId);
 
-    const sortedNodes = sortNodes(nodes);
-
-    if (sortedNodes.length === 0) {
-        emptyMsg.style.display = 'flex';
+    if (nodes.length === 0) {
+        if (emptyMsg) emptyMsg.style.display = 'flex';
         return;
     }
-    emptyMsg.style.display = 'none';
+    if (emptyMsg) emptyMsg.style.display = 'none';
 
-    sortedNodes.forEach(node => {
-        if (node.children) {
-            // Render Folder Card
-            const card = document.createElement('div');
-            card.className = 'folder-card';
-            card.innerHTML = `
-                <i class="fa-solid fa-folder"></i>
-                <div class="card-info">
-                    <div class="card-title">${node.title || 'Untitled'}</div>
-                    <div class="card-url">${node.children.length} items</div>
-                </div>
-            `;
-            card.onclick = () => navigateToFolder(node.id, node.title);
-            grid.appendChild(card);
-        } else {
-            // Render Bookmark Card
-            const card = document.createElement('a');
-            card.className = 'bookmark-card';
-            card.href = node.url;
-            card.target = '_blank';
+    if (isSearch && currentSearchMode === 'grouped') {
+        const groups = {};
+        nodes.forEach(node => {
+            const p = node.parentTitle || 'Other';
+            if (!groups[p]) groups[p] = [];
+            groups[p].push(node);
+        });
 
-            card.innerHTML = `
-                <div class="bookmark-tooltip">${node.title}</div>
-                <div class="card-top">
-                    <div class="favicon-box">
-                        <img src="${getFavicon(node.url)}" alt="" onerror="this.src='https://www.google.com/s2/favicons?domain=example.com'">
-                    </div>
-                    <div class="card-info">
-                        <div class="card-title">${node.title || 'Untitled'}</div>
-                        <div class="card-url">${node.url}</div>
-                    </div>
-                </div>
-            `;
-            grid.appendChild(card);
-        }
-    });
+        Object.keys(groups).forEach(groupName => {
+            const header = document.createElement('div');
+            header.className = 'search-group-header';
+            header.innerHTML = `<i class="fa-solid fa-folder-open"></i> ${groupName}`;
+            grid.appendChild(header);
+
+            groups[groupName].forEach(node => {
+                grid.appendChild(createCard(node));
+            });
+        });
+    } else {
+        const sortedNodes = sortNodes(nodes);
+        sortedNodes.forEach(node => {
+            grid.appendChild(createCard(node));
+        });
+    }
 }
 
 // Recursive function to build folder tree
@@ -208,104 +275,254 @@ function buildTree(nodes, container, depth = 0) {
 }
 
 // Flatten bookmarks for global search
-function flatten(nodes, arr = []) {
+function flatten(nodes, arr = [], parentTitle = 'All Bookmarks') {
     nodes.forEach(node => {
-        if (node.url) arr.push(node);
-        if (node.children) flatten(node.children, arr);
+        // Include both bookmarks (node.url) and folders (node.children)
+        // Skip the root node which usually has no title or id '0'
+        if (node.title && node.id !== '0') {
+            node.parentTitle = parentTitle;
+            arr.push(node);
+        }
+        if (node.children) flatten(node.children, arr, node.title || parentTitle);
     });
     return arr;
 }
 
 function init() {
     if (typeof chrome !== 'undefined' && chrome.bookmarks) {
-        chrome.bookmarks.getTree(function(tree) {
+        chrome.bookmarks.getTree((tree) => {
+            if (chrome.runtime.lastError || !tree || !tree[0]) {
+                console.error('Error loading bookmarks');
+                const emptyMsg = document.getElementById('empty-msg');
+                if (emptyMsg) emptyMsg.style.display = 'flex';
+                return;
+            }
+
             const root = tree[0];
             const treeContainer = document.getElementById('folder-tree-container');
-            treeContainer.innerHTML = '';
+            if (treeContainer) treeContainer.innerHTML = '';
 
             // Build the tree
             buildTree(root.children, treeContainer);
 
             // Prepare data
             allBookmarksFlat = flatten(tree);
-            currentNodes = allBookmarksFlat;
+            
+            // Default view: Show top-level folders instead of everything flattened
+            currentNodes = root.children; 
             renderBookmarks(currentNodes);
 
-            // Sidebar Search
-            document.getElementById('sidebar-search-input').addEventListener('input', (e) => {
-                const query = e.target.value.toLowerCase();
-                document.querySelectorAll('.folder-item').forEach(item => {
-                    const title = item.dataset.title || '';
-                    if (title.includes(query)) {
-                        item.style.display = 'flex';
-                        // If searching, expand parents
-                        if (query.length > 0) {
-                            let parent = item.parentElement.closest('.sub-tree');
-                            while (parent) {
-                                parent.classList.add('expanded');
-                                parent.previousElementSibling.classList.add('expanded');
-                                parent = parent.parentElement.closest('.sub-tree');
-                            }
-                        }
-                    } else {
-                        item.style.display = 'none';
+            // Tools Menu
+            const toolsBtn = document.getElementById('tools-btn');
+            const toolsMenu = document.getElementById('tools-menu');
+            if (toolsBtn && toolsMenu) {
+                toolsBtn.onclick = (e) => {
+                    e.stopPropagation();
+                    toolsMenu.classList.toggle('active');
+                };
+            }
+            document.onclick = () => toolsMenu && toolsMenu.classList.remove('active');
+
+            // Find Duplicates
+            const findDupsBtn = document.getElementById('find-duplicates-btn');
+            if (findDupsBtn) {
+                findDupsBtn.onclick = () => {
+                    const seen = new Map();
+                    const dups = allBookmarksFlat.filter(bm => {
+                        if (!bm.url) return false; // Skip folders
+                        if (seen.has(bm.url)) return true;
+                        seen.set(bm.url, true);
+                        return false;
+                    });
+                    if (dups.length === 0) alert('No duplicates found!');
+                    else {
+                        currentNodes = dups;
+                        document.getElementById('current-folder-name').textContent = `Duplicates (${dups.length})`;
+                        renderBookmarks(dups);
                     }
-                });
+                };
+            }
+
+            // Export JSON
+            const exportBtn = document.getElementById('export-json-btn');
+            if (exportBtn) {
+                exportBtn.onclick = () => {
+                    const blob = new Blob([JSON.stringify(allBookmarksFlat, null, 2)], {type: 'application/json'});
+                    const url = URL.createObjectURL(blob);
+                    const a = document.createElement('a');
+                    a.href = url;
+                    a.download = 'bookmarks_backup.json';
+                    a.click();
+                };
+            }
+
+            // Bulk Actions
+            const bulkCancelBtn = document.getElementById('bulk-cancel-btn');
+            if (bulkCancelBtn) {
+                bulkCancelBtn.onclick = () => {
+                    selectedIds.clear();
+                    updateSelectionToolbar();
+                    renderBookmarks(currentNodes);
+                };
+            }
+
+            const bulkDeleteBtn = document.getElementById('bulk-delete-btn');
+            if (bulkDeleteBtn) {
+                bulkDeleteBtn.onclick = () => {
+                    if (confirm(`Delete ${selectedIds.size} items?`)) {
+                        const ids = Array.from(selectedIds);
+                        let deleted = 0;
+                        ids.forEach(id => {
+                            chrome.bookmarks.removeTree(id, () => {
+                                deleted++;
+                                if (deleted === ids.length) {
+                                    selectedIds.clear();
+                                    updateSelectionToolbar();
+                                    location.reload(); // Refresh to sync
+                                }
+                            });
+                        });
+                    }
+                };
+            }
+
+            // Keyboard Shortcuts
+            document.addEventListener('keydown', (e) => {
+                // Ctrl+K to search
+                if ((e.ctrlKey || e.metaKey) && e.key === 'k') {
+                    e.preventDefault();
+                    const searchInput = document.getElementById('search-input');
+                    if (searchInput) searchInput.focus();
+                }
+                // Escape to clear selection
+                if (e.key === 'Escape' && selectedIds.size > 0) {
+                    selectedIds.clear();
+                    updateSelectionToolbar();
+                    renderBookmarks(currentNodes);
+                }
             });
+
+            // Sidebar Search
+            const sidebarSearch = document.getElementById('sidebar-search-input');
+            if (sidebarSearch) {
+                sidebarSearch.addEventListener('input', (e) => {
+                    const query = e.target.value.toLowerCase();
+                    document.querySelectorAll('.folder-item').forEach(item => {
+                        const title = item.dataset.title || '';
+                        if (title.includes(query)) {
+                            item.style.display = 'flex';
+                            // If searching, expand parents
+                            if (query.length > 0) {
+                                let parent = item.parentElement.closest('.sub-tree');
+                                while (parent) {
+                                    parent.classList.add('expanded');
+                                    parent.previousElementSibling.classList.add('expanded');
+                                    parent = parent.parentElement.closest('.sub-tree');
+                                }
+                            }
+                        } else {
+                            item.style.display = 'none';
+                        }
+                    });
+                });
+            }
 
             // Main Search
-            document.getElementById('search-input').addEventListener('input', (e) => {
-                const query = e.target.value.toLowerCase();
-                if (!query) {
-                    navigateToFolder(currentFolderId, document.getElementById('current-folder-name').textContent);
-                    return;
-                }
-                const filtered = allBookmarksFlat.filter(bm => 
-                    (bm.title || '').toLowerCase().includes(query) || 
-                    (bm.url || '').toLowerCase().includes(query)
-                );
-                renderBookmarks(filtered);
-            });
+            const mainSearch = document.getElementById('search-input');
+            const searchModeBtn = document.getElementById('search-mode-btn');
+
+            if (searchModeBtn) {
+                searchModeBtn.onclick = () => {
+                    currentSearchMode = currentSearchMode === 'flat' ? 'grouped' : 'flat';
+                    searchModeBtn.classList.toggle('active', currentSearchMode === 'grouped');
+                    searchModeBtn.title = currentSearchMode === 'grouped' ? 'Show Flat List' : 'Group by Folder';
+                    
+                    const span = searchModeBtn.querySelector('span');
+                    if (span) {
+                        span.textContent = currentSearchMode === 'grouped' ? 'Grouped' : 'Flat View';
+                    }
+                    
+                    // Re-trigger search if there's a query
+                    if (mainSearch && mainSearch.value) {
+                        mainSearch.dispatchEvent(new Event('input'));
+                    }
+                };
+            }
+
+            if (mainSearch) {
+                mainSearch.addEventListener('input', (e) => {
+                    const query = e.target.value.toLowerCase();
+                    if (!query) {
+                        navigateToFolder(currentFolderId, document.getElementById('current-folder-name').textContent);
+                        return;
+                    }
+                    currentNodes = allBookmarksFlat.filter(bm => 
+                        (bm.title || '').toLowerCase().includes(query) || 
+                        (bm.url || '').toLowerCase().includes(query)
+                    );
+                    renderBookmarks(currentNodes, true);
+                });
+            }
 
             // View Toggles
-            document.getElementById('grid-view-btn').onclick = () => {
-                currentViewMode = 'grid';
-                document.getElementById('grid-view-btn').classList.add('active');
-                document.getElementById('list-view-btn').classList.remove('active');
-                renderBookmarks(currentNodes);
-            };
-            document.getElementById('list-view-btn').onclick = () => {
-                currentViewMode = 'list';
-                document.getElementById('list-view-btn').classList.add('active');
-                document.getElementById('grid-view-btn').classList.remove('active');
-                renderBookmarks(currentNodes);
-            };
+            const gridBtn = document.getElementById('grid-view-btn');
+            const listBtn = document.getElementById('list-view-btn');
+            if (gridBtn) {
+                gridBtn.onclick = () => {
+                    currentViewMode = 'grid';
+                    gridBtn.classList.add('active');
+                    if (listBtn) listBtn.classList.remove('active');
+                    const isSearch = !!(mainSearch && mainSearch.value);
+                    renderBookmarks(currentNodes, isSearch);
+                };
+            }
+            if (listBtn) {
+                listBtn.onclick = () => {
+                    currentViewMode = 'list';
+                    listBtn.classList.add('active');
+                    if (gridBtn) gridBtn.classList.remove('active');
+                    const isSearch = !!(mainSearch && mainSearch.value);
+                    renderBookmarks(currentNodes, isSearch);
+                };
+            }
 
             // Sort Select
-            document.getElementById('sort-select').onchange = (e) => {
-                currentSortMode = e.target.value;
-                renderBookmarks(currentNodes);
-            };
+            const sortSelect = document.getElementById('sort-select');
+            if (sortSelect) {
+                sortSelect.onchange = (e) => {
+                    currentSortMode = e.target.value;
+                    const isSearch = !!(mainSearch && mainSearch.value);
+                    renderBookmarks(currentNodes, isSearch);
+                };
+            }
 
             // Tooltip Toggle
             const tooltipToggle = document.getElementById('tooltip-toggle');
-            tooltipToggle.addEventListener('change', () => {
-                if (tooltipToggle.checked) {
-                    document.body.classList.add('full-title-mode');
-                } else {
-                    document.body.classList.remove('full-title-mode');
-                }
-            });
-            // Initial state
-            if (tooltipToggle.checked) document.body.classList.add('full-title-mode');
+            if (tooltipToggle) {
+                tooltipToggle.addEventListener('change', () => {
+                    if (tooltipToggle.checked) {
+                        document.body.classList.add('full-title-mode');
+                    } else {
+                        document.body.classList.remove('full-title-mode');
+                    }
+                });
+                // Initial state
+                if (tooltipToggle.checked) document.body.classList.add('full-title-mode');
+            }
 
             // All Bookmarks button
-            document.getElementById('all-bookmarks-btn').onclick = () => navigateToFolder(null);
+            const allBookmarksBtn = document.getElementById('all-bookmarks-btn');
+            if (allBookmarksBtn) {
+                allBookmarksBtn.onclick = () => navigateToFolder(null);
+            }
         });
     } else {
-        document.getElementById('empty-msg').style.display = 'flex';
-        document.getElementById('empty-msg').innerHTML = '<i class="fa-solid fa-triangle-exclamation"></i><p>Please open this page through the extension to access bookmarks.</p>';
+        const emptyMsg = document.getElementById('empty-msg');
+        if (emptyMsg) {
+            emptyMsg.style.display = 'flex';
+            emptyMsg.innerHTML = '<i class="fa-solid fa-triangle-exclamation"></i><p>Please open this page through the extension to access bookmarks.</p>';
+        }
     }
 }
 
-window.onload = init;
+document.addEventListener('DOMContentLoaded', init);
