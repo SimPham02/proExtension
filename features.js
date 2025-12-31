@@ -47,5 +47,12 @@ export const FEATURES = [
     icon: 'fa-solid fa-language',
     ui: 'features/translate/ui.html',
     logic: async () => (await import('./features/translate/logic.js'))
+  },
+  {
+    key: 'studocu',
+    name: 'Studocu Cleaner',
+    icon: 'fa-solid fa-file-shield',
+    ui: 'features/studocu/ui.html',
+    logic: async () => (await import('./features/studocu/logic.js'))
   }
 ];

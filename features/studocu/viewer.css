@@ -1,0 +1,117 @@
+/* Studocu Clean Viewer - Inject vào trang */
+
+#clean-viewer-container ~ *,
+body > *:not(#clean-viewer-container) {
+    display: none !important;
+}
+
+#clean-viewer-container {
+    display: block !important;
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    background: #525659;
+    z-index: 999999;
+    padding: 20px 0;
+}
+
+.std-page {
+    position: relative;
+    margin: 0 auto 20px auto;
+    background: white;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+    overflow: hidden;
+    page-break-after: always;
+    page-break-inside: avoid;
+}
+
+.std-page:last-child {
+    margin-bottom: 0;
+}
+
+.layer-bg {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    z-index: 1;
+}
+
+.layer-bg img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    object-position: top center;
+}
+
+.layer-text {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    z-index: 2;
+    pointer-events: none;
+}
+
+.layer-text .pc {
+    transform: none !important;
+    -webkit-transform: none !important;
+    position: relative !important;
+    width: 100% !important;
+    height: 100% !important;
+}
+
+.layer-text * {
+    filter: none !important;
+    -webkit-filter: none !important;
+}
+
+/* Hide watermarks */
+[class*="watermark"],
+[class*="Watermark"],
+[id*="watermark"],
+[id*="Watermark"],
+.blur-overlay,
+.premium-blur,
+.paywall-overlay {
+    display: none !important;
+}
+
+/* Print */
+@media print {
+    @page { margin: 0; size: auto; }
+    
+    html, body {
+        margin: 0 !important;
+        padding: 0 !important;
+        background: white !important;
+        -webkit-print-color-adjust: exact !important;
+        print-color-adjust: exact !important;
+    }
+    
+    #clean-viewer-container {
+        position: static !important;
+        background: white !important;
+        padding: 0 !important;
+    }
+    
+    .std-page {
+        margin: 0 !important;
+        box-shadow: none !important;
+        page-break-after: always !important;
+        break-after: page !important;
+    }
+    
+    .std-page:last-child {
+        page-break-after: auto !important;
+    }
+    
+    [class*="watermark"], [id*="watermark"],
+    .blur-text, .blurred, .paywall, .premium-overlay {
+        display: none !important;
+        visibility: hidden !important;
+    }
+}
