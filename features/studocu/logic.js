@@ -1,7 +1,5 @@
 // Studocu Cleaner
 
-const SCALE = 4;
-
 function updateStatus(msg, processing = false) {
     const text = document.getElementById('status-text');
     const bar = document.getElementById('status');
@@ -10,27 +8,10 @@ function updateStatus(msg, processing = false) {
 }
 
 // Xóa cookies qua background script
-// Helper to promisify sendMessage
-function sendMessageAsync(message) {
-    return new Promise((resolve, reject) => {
-        try {
-            const maybe = chrome.runtime.sendMessage(message, (resp) => {
-                if (chrome.runtime.lastError) return reject(chrome.runtime.lastError);
-                resolve(resp);
-            });
-            if (maybe && typeof maybe.then === 'function') {
-                maybe.then(resolve).catch(reject);
-            }
-        } catch (err) {
-            reject(err);
-        }
-    });
-}
-
 async function clearCookies() {
-        updateStatus("Đang xóa cookie...", true);
-        try {
-                const res = await sendMessageAsync({ type: 'clearStudocuCookies' });
+    updateStatus("Đang xóa cookie...", true);
+    try {
+        const res = await chrome.runtime.sendMessage({ type: 'clearStudocuCookies' });
         if (res.success) {
             updateStatus(`Đã xóa ${res.count} cookies!`, false);
             setTimeout(() => {

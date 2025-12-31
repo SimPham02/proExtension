@@ -14,9 +14,14 @@
                 <i class="fa-solid fa-bolt"></i>
                 <span>Pro Extensions</span>
             </div>
-            <button id="open-favorites" class="btn-icon" title="Bookmark Manager">
-                <i class="fa-solid fa-bookmark"></i>
-            </button>
+                <div style="display:flex; gap:0.5rem;">
+                    <button id="open-favorites" class="btn-icon" title="Bookmark Manager">
+                        <i class="fa-solid fa-bookmark"></i>
+                    </button>
+                    <button id="open-settings" class="btn-icon" title="Settings">
+                        <i class="fa-solid fa-cog"></i>
+                    </button>
+                </div>
         </header>
 
         <div id="main-view">
@@ -32,6 +37,25 @@
             </div>
             <div id="feature-content"></div>
         </div>
+    
+    <!-- Settings Panel -->
+    <div id="settings-panel" class="settings-panel">
+        <div class="settings-backdrop" id="settings-backdrop"></div>
+        <div class="settings-modal">
+            <div class="settings-header">
+                <h3><i class="fa-solid fa-sliders"></i> Cài đặt</h3>
+                <button id="close-settings" class="settings-close"><i class="fa-solid fa-xmark"></i></button>
+            </div>
+            <div class="settings-body">
+                <p class="settings-hint">Kéo thả để sắp xếp vị trí, bỏ chọn để ẩn feature</p>
+                <div id="features-list" class="features-list"></div>
+            </div>
+            <div class="settings-footer">
+                <button id="reset-settings" class="btn btn-ghost">Reset</button>
+                <button id="save-settings" class="btn btn-primary">Lưu thay đổi</button>
+            </div>
+        </div>
+    </div>
     </div>
     <script type="module" src="popup.js"></script>
 </body>
