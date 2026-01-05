@@ -58,6 +58,9 @@
                     <button type="button" class="voice-btn" id="voice-btn" title="Tìm bằng giọng nói">
                         <i class="fa-solid fa-microphone"></i>
                     </button>
+                    <button type="button" class="image-btn" id="image-btn" title="Tìm bằng hình ảnh">
+                        <i class="fa-solid fa-image"></i>
+                    </button>
                 </div>
             </form>
         </section>
@@ -89,6 +92,27 @@
                 </div>
                 <div id="folder-grid" class="shortcuts-grid">
                     <!-- Folder items here -->
+                </div>
+            </div>
+        </div>
+
+        <!-- Calendar Modal -->
+        <div id="calendar-modal" class="modal">
+            <div class="modal-overlay"></div>
+            <div class="modal-content calendar-content">
+                <div class="calendar-header">
+                    <button class="calendar-nav" id="prev-month"><i class="fa-solid fa-chevron-left"></i></button>
+                    <h3 id="calendar-title">Tháng 1, 2026</h3>
+                    <button class="calendar-nav" id="next-month"><i class="fa-solid fa-chevron-right"></i></button>
+                </div>
+                <div class="calendar-grid">
+                    <div class="calendar-weekdays">
+                        <div>CN</div><div>T2</div><div>T3</div><div>T4</div><div>T5</div><div>T6</div><div>T7</div>
+                    </div>
+                    <div class="calendar-days" id="calendar-days"></div>
+                </div>
+                <div class="calendar-footer">
+                    <button class="modal-cancel" id="calendar-close">Đóng</button>
                 </div>
             </div>
         </div>
@@ -141,7 +165,7 @@
     </div>
 </div>
 
-<!-- Todo Panel (Slide) -->
+
     <aside class="todo-panel" id="todo-panel">
         <div class="todo-header">
             <h3><i class="fa-solid fa-list-check"></i> Việc cần làm</h3>
@@ -149,7 +173,7 @@
         </div>
         <div class="todo-input">
             <input type="text" id="todo-input" placeholder="Thêm việc mới...">
-            <button id="add-todo"><i class="fa-solid fa-plus"></i></button>
+            <button id="add-todo" title="Thêm việc"><i class="fa-solid fa-plus"></i></button>
         </div>
         <ul class="todo-list" id="todo-list"></ul>
         <div class="todo-footer">

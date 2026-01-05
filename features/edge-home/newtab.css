@@ -144,6 +144,12 @@ body {
     font-size: 14px;
     color: var(--text-muted);
     font-weight: 500;
+    cursor: pointer;
+    transition: var(--transition);
+}
+
+.full-date:hover {
+    color: var(--text-secondary);
 }
 
 .weather {
@@ -294,6 +300,12 @@ body {
     transform: scale(1.02);
 }
 
+.search-input-wrapper.drag-over {
+    border-color: var(--accent);
+    background: rgba(99, 102, 241, 0.1);
+    box-shadow: 0 0 20px rgba(99, 102, 241, 0.4);
+}
+
 .search-icon {
     color: var(--text-muted);
     font-size: 18px;
@@ -335,6 +347,27 @@ body {
     color: var(--accent-light);
     background: rgba(255, 255, 255, 0.1);
     transform: rotate(15deg);
+}
+
+.image-btn {
+    width: 48px;
+    height: 48px;
+    border-radius: 18px;
+    border: none;
+    background: transparent;
+    color: var(--text-muted);
+    cursor: pointer;
+    transition: var(--transition);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 18px;
+}
+
+.image-btn:hover {
+    color: var(--accent-light);
+    background: rgba(255, 255, 255, 0.1);
+    transform: scale(1.1);
 }
 
 /* ===== Shortcuts ===== */
@@ -702,7 +735,130 @@ body {
     box-shadow: 0 0 15px rgba(239, 68, 68, 0.5);
 }
 
-/* ===== AI Section ===== */
+/* ===== Modal ===== */
+.modal {
+    position: fixed;
+    inset: 0;
+    z-index: 1000;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    opacity: 0;
+    visibility: hidden;
+    transition: all 0.3s ease;
+}
+
+.modal.open {
+    opacity: 1;
+    visibility: visible;
+}
+
+.modal-overlay {
+    position: absolute;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.5);
+    backdrop-filter: blur(10px);
+}
+
+.modal-content {
+    position: relative;
+    background: rgba(255, 255, 255, 0.1);
+    backdrop-filter: blur(30px);
+    border-radius: 20px;
+    padding: 30px;
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    max-width: 500px;
+    width: 90%;
+    box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3);
+}
+
+.image-search-content {
+    text-align: center;
+}
+
+.modal-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+}
+
+.modal-header h3 {
+    color: white;
+    font-size: 20px;
+    font-weight: 600;
+}
+
+.modal-close {
+    background: none;
+    border: none;
+    color: white;
+    font-size: 18px;
+    cursor: pointer;
+    padding: 5px;
+    border-radius: 50%;
+    transition: background 0.3s ease;
+}
+
+.modal-close:hover {
+    background: rgba(255, 255, 255, 0.1);
+}
+
+.image-upload-area {
+    border: 2px dashed rgba(255, 255, 255, 0.3);
+    border-radius: 15px;
+    padding: 40px 20px;
+    margin: 20px 0;
+    transition: all 0.3s ease;
+    cursor: pointer;
+    background: rgba(255, 255, 255, 0.05);
+}
+
+.image-upload-area:hover,
+.image-upload-area.drag-over {
+    border-color: var(--accent);
+    background: rgba(99, 102, 241, 0.1);
+}
+
+.upload-icon {
+    font-size: 48px;
+    color: rgba(255, 255, 255, 0.6);
+    margin-bottom: 15px;
+}
+
+.image-upload-area p {
+    color: rgba(255, 255, 255, 0.8);
+    font-size: 16px;
+    margin: 0;
+}
+
+#upload-btn {
+    color: var(--accent);
+    cursor: pointer;
+    font-weight: 600;
+}
+
+#upload-btn:hover {
+    text-decoration: underline;
+}
+
+.modal-footer {
+    margin-top: 20px;
+}
+
+.modal-cancel {
+    background: rgba(255, 255, 255, 0.1);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    color: white;
+    padding: 10px 20px;
+    border-radius: 10px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.modal-cancel:hover {
+    background: rgba(255, 255, 255, 0.2);
+}
 .ai-section {
     width: 100%;
     animation: fadeIn 0.8s ease-out 0.4s backwards;
@@ -906,7 +1062,18 @@ body {
     border-radius: 14px;
     margin-bottom: 10px;
     transition: var(--transition);
-    animation: fadeIn 0.3s ease-out;
+    animation: slideInRight 0.4s ease-out;
+}
+
+@keyframes slideInRight {
+    from {
+        opacity: 0;
+        transform: translateX(30px);
+    }
+    to {
+        opacity: 1;
+        transform: translateX(0);
+    }
 }
 
 .todo-item:hover {
@@ -960,6 +1127,19 @@ body {
     font-size: 15px;
     color: var(--text-primary);
     transition: color 0.3s;
+    cursor: pointer;
+    padding: 2px 4px;
+    border-radius: 4px;
+    outline: none;
+}
+
+.todo-text:hover {
+    background: rgba(255, 255, 255, 0.05);
+}
+
+.todo-text:focus {
+    background: rgba(255, 255, 255, 0.1);
+    border: 1px solid var(--accent);
 }
 
 .todo-delete {
@@ -1479,4 +1659,110 @@ body {
 
 ::-webkit-scrollbar-thumb:hover {
     background: rgba(255, 255, 255, 0.2);
+}
+
+/* ===== Calendar Modal ===== */
+.calendar-content {
+    max-width: 400px;
+    text-align: center;
+}
+
+.calendar-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+}
+
+.calendar-header h3 {
+    font-size: 18px;
+    font-weight: 600;
+    color: white;
+}
+
+.calendar-nav {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    border: none;
+    background: rgba(255, 255, 255, 0.1);
+    color: white;
+    cursor: pointer;
+    transition: var(--transition);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.calendar-nav:hover {
+    background: rgba(255, 255, 255, 0.2);
+    transform: scale(1.1);
+}
+
+.calendar-grid {
+    margin: 20px 0;
+}
+
+.calendar-weekdays {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    gap: 5px;
+    margin-bottom: 10px;
+}
+
+.calendar-weekdays div {
+    padding: 8px;
+    font-size: 12px;
+    font-weight: 600;
+    color: rgba(255, 255, 255, 0.7);
+    text-transform: uppercase;
+}
+
+.calendar-days {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    gap: 5px;
+    min-height: 300px;
+}
+
+.calendar-day {
+    aspect-ratio: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 8px 4px;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: var(--transition);
+    position: relative;
+    min-height: 40px;
+}
+
+.calendar-day:hover {
+    background: rgba(255, 255, 255, 0.1);
+}
+
+.calendar-day.today {
+    background: var(--accent);
+    color: white;
+}
+
+.calendar-day.other-month {
+    color: rgba(255, 255, 255, 0.3);
+}
+
+.calendar-day-number {
+    font-size: 14px;
+    font-weight: 500;
+}
+
+.calendar-lunar {
+    font-size: 10px;
+    opacity: 0.7;
+    margin-top: 2px;
+}
+
+.calendar-footer {
+    margin-top: 20px;
 }

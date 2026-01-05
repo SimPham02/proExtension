@@ -93,6 +93,10 @@ function toggle(id, show) {
 
 // ===== Đồng hồ =====
 function initClock() {
+    const fullDateElement = document.getElementById('full-date');
+    fullDateElement.addEventListener('click', openCalendar);
+    fullDateElement.style.cursor = 'pointer';
+    
     const update = () => {
         const now = new Date();
         const h = now.getHours().toString().padStart(2, '0');
@@ -118,6 +122,152 @@ function updateGreeting(hour) {
     
     const name = state.settings.userName;
     document.getElementById('greeting').textContent = name ? `${text}, ${name}!` : `${text}!`;
+}
+
+// ===== Lịch =====
+let currentCalendarDate = new Date();
+
+function openCalendar() {
+    currentCalendarDate = new Date(); // Reset to current month
+    const modal = document.getElementById('calendar-modal');
+    modal.classList.add('open');
+    
+    const closeBtn = document.getElementById('calendar-close');
+    closeBtn.addEventListener('click', () => modal.classList.remove('open'));
+    modal.querySelector('.modal-overlay').addEventListener('click', () => modal.classList.remove('open'));
+    
+    // Navigation
+    document.getElementById('prev-month').addEventListener('click', () => {
+        currentCalendarDate.setMonth(currentCalendarDate.getMonth() - 1);
+        renderCalendar();
+    });
+    
+    document.getElementById('next-month').addEventListener('click', () => {
+        currentCalendarDate.setMonth(currentCalendarDate.getMonth() + 1);
+        renderCalendar();
+    });
+    
+    renderCalendar();
+}
+
+function renderCalendar() {
+    const year = currentCalendarDate.getFullYear();
+    const month = currentCalendarDate.getMonth();
+    
+    document.getElementById('calendar-title').textContent = 
+        `Tháng ${month + 1}, ${year}`;
+    
+    const daysContainer = document.getElementById('calendar-days');
+    daysContainer.innerHTML = '';
+    
+    const firstDay = new Date(year, month, 1);
+    const lastDay = new Date(year, month + 1, 0);
+    const startDate = new Date(firstDay);
+    startDate.setDate(startDate.getDate() - firstDay.getDay());
+    
+    const today = new Date();
+    const isCurrentMonth = today.getFullYear() === year && today.getMonth() === month;
+    
+    for (let i = 0; i < 42; i++) {
+        const date = new Date(startDate);
+        date.setDate(startDate.getDate() + i);
+        
+        const dayDiv = document.createElement('div');
+        dayDiv.className = 'calendar-day';
+        
+        if (date.getMonth() !== month) {
+            dayDiv.classList.add('other-month');
+        }
+        
+        if (isCurrentMonth && date.getDate() === today.getDate() && date.getMonth() === today.getMonth()) {
+            dayDiv.classList.add('today');
+        }
+        
+        const lunar = getLunarDate(date.getDate(), date.getMonth() + 1, date.getFullYear());
+        
+        dayDiv.innerHTML = `
+            <div class="calendar-day-number">${date.getDate()}</div>
+            <div class="calendar-lunar">${lunar.day}/${lunar.month}</div>
+        `;
+        
+        daysContainer.appendChild(dayDiv);
+    }
+}
+
+// Calibrated lunar date calculation for Vietnamese calendar
+function getLunarDate(day, month, year) {
+    // Use calibrated calculation based on known dates
+    const lunarData = calculateCalibratedLunarDate(day, month, year);
+
+    return {
+        day: lunarData.day,
+        month: lunarData.month
+    };
+}
+
+// Calibrated lunar calculation using known reference points
+function calculateCalibratedLunarDate(day, month, year) {
+    // Known reference: January 6, 2026 = Lunar 18/11/2025
+    // This gives us a calibration point
+
+    const targetJd = julianDayNumber(6, 1, 2026);
+    const targetLunar = { day: 18, month: 11, year: 2025 };
+
+    // Calculate days from our reference point
+    const currentJd = julianDayNumber(day, month, year);
+    const daysDiff = currentJd - targetJd;
+
+    // Lunar month is approximately 29.530588 days
+    const lunarMonthLength = 29.530588;
+    const lunarDayLength = lunarMonthLength;
+
+    // Calculate lunar date relative to reference
+    let lunarDay = targetLunar.day + Math.round(daysDiff);
+    let lunarMonth = targetLunar.month;
+    let lunarYear = targetLunar.year;
+
+    // Adjust for month boundaries
+    while (lunarDay > 30) {
+        lunarDay -= 30;
+        lunarMonth += 1;
+        if (lunarMonth > 12) {
+            lunarMonth = 1;
+            lunarYear += 1;
+        }
+    }
+
+    while (lunarDay < 1) {
+        lunarDay += 30;
+        lunarMonth -= 1;
+        if (lunarMonth < 1) {
+            lunarMonth = 12;
+            lunarYear -= 1;
+        }
+    }
+
+    // Handle leap months (simplified - add leap month every 19 years)
+    const yearsDiff = lunarYear - 2025;
+    const leapMonths = Math.floor(yearsDiff / 19);
+    lunarMonth += leapMonths;
+    if (lunarMonth > 12) {
+        lunarMonth -= 12;
+        lunarYear += 1;
+    }
+
+    return {
+        day: Math.max(1, Math.min(30, lunarDay)),
+        month: lunarMonth,
+        year: lunarYear
+    };
+}
+
+// Convert Gregorian date to Julian Day Number
+function julianDayNumber(day, month, year) {
+    let a = Math.floor((14 - month) / 12);
+    let y = year + 4800 - a;
+    let m = month + 12 * a - 3;
+
+    return day + Math.floor((153 * m + 2) / 5) + 365 * y + Math.floor(y / 4) - Math.floor(y / 100) + Math.floor(y / 400) - 32045;
 }
 
 // ===== Thời tiết =====
@@ -154,6 +304,8 @@ function initSearch() {
     const input = document.getElementById('search-input');
     const engines = document.querySelectorAll('.engine');
     const voiceBtn = document.getElementById('voice-btn');
+    const imageBtn = document.getElementById('image-btn');
+    const imageInput = document.getElementById('image-input');
     
     // Chọn công cụ tìm kiếm
     engines.forEach(btn => {
@@ -196,6 +348,18 @@ function initSearch() {
     } else {
         voiceBtn.style.display = 'none';
     }
+    
+    // Tìm kiếm hình ảnh
+    imageBtn.addEventListener('click', () => {
+        const q = input.value.trim();
+        if (q) {
+            // Search images with text
+            window.location.href = `https://www.google.com/search?tbm=isch&q=${encodeURIComponent(q)}`;
+        } else {
+            // Open Google Lens for direct image search
+            window.location.href = 'https://lens.google.com/';
+        }
+    });
 }
 
 // ===== Lối tắt =====
@@ -567,9 +731,15 @@ function initTodo() {
         renderTodos();
     });
     
-    renderTodos();
-}
+    // Keyboard shortcuts
+    document.addEventListener('keydown', (e) => {
+        if (e.ctrlKey && e.key === 't' && !panel.classList.contains('open')) {
+            e.preventDefault();
+            fab.click();
+        }
+    });
 
+}
 function renderTodos() {
     const list = document.getElementById('todo-list');
     const count = document.getElementById('todo-count');
@@ -579,9 +749,9 @@ function renderTodos() {
         const li = document.createElement('li');
         li.className = `todo-item${todo.done ? ' done' : ''}`;
         li.innerHTML = `
-            <button class="todo-checkbox" data-index="${i}"></button>
-            <span class="todo-text">${todo.text}</span>
-            <button class="todo-delete" data-index="${i}"><i class="fa-solid fa-trash"></i></button>
+            <button class="todo-checkbox" data-index="${i}" title="Đánh dấu hoàn thành"></button>
+            <span class="todo-text" data-index="${i}" contenteditable="false" title="Double-click để chỉnh sửa">${todo.text}</span>
+            <button class="todo-delete" data-index="${i}" title="Xóa"><i class="fa-solid fa-trash"></i></button>
         `;
         list.appendChild(li);
     });
@@ -595,6 +765,41 @@ function renderTodos() {
             state.todos[i].done = !state.todos[i].done;
             saveTodos();
             renderTodos();
+        });
+    });
+    
+    list.querySelectorAll('.todo-text').forEach(span => {
+        span.addEventListener('dblclick', () => {
+            span.contentEditable = 'true';
+            span.focus();
+            // Select all text
+            const range = document.createRange();
+            range.selectNodeContents(span);
+            const selection = window.getSelection();
+            selection.removeAllRanges();
+            selection.addRange(range);
+        });
+        
+        span.addEventListener('blur', () => {
+            span.contentEditable = 'false';
+            const i = parseInt(span.dataset.index);
+            const newText = span.textContent.trim();
+            if (newText && newText !== state.todos[i].text) {
+                state.todos[i].text = newText;
+                saveTodos();
+            } else if (!newText) {
+                // If empty, delete
+                state.todos.splice(i, 1);
+                saveTodos();
+                renderTodos();
+            }
+        });
+        
+        span.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') {
+                e.preventDefault();
+                span.blur();
+            }
         });
     });
     
@@ -623,4 +828,3 @@ async function saveSettings(update) {
     state.settings = { ...state.settings, ...update };
     await chrome.storage.sync.set({ edgeHomeSettings: state.settings });
 }
-
