@@ -1,0 +1,195 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tab Mới</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+    <link rel="stylesheet" href="newtab.css">
+</head>
+<body>
+    <!-- Background Animation -->
+    <div class="bg-gradient"></div>
+    
+    <!-- Main Container -->
+    <main class="container">
+        <!-- Header: Date & Weather -->
+        <header class="header">
+            <div class="date-info">
+                <span class="day" id="day">Thứ Hai</span>
+                <span class="full-date" id="full-date">01 tháng 01, 2026</span>
+            </div>
+            <div class="weather" id="weather">
+                <i class="fa-solid fa-sun weather-icon"></i>
+                <span class="temp" id="temp">--°C</span>
+                <span class="city" id="city">Đang tải...</span>
+            </div>
+        </header>
+
+        <!-- Clock Section -->
+        <section class="clock-section" id="clock-section">
+            <div class="time" id="time">00:00</div>
+            <div class="greeting" id="greeting">Xin chào!</div>
+        </section>
+
+        <!-- Search Box -->
+        <section class="search-section" id="search-section">
+            <form class="search-box" id="search-form">
+                <div class="search-engines">
+                    <button type="button" class="engine active" data-engine="google" title="Google">
+                        <img src="https://www.google.com/favicon.ico" alt="G">
+                    </button>
+                    <button type="button" class="engine" data-engine="bing" title="Bing">
+                        <img src="https://www.bing.com/favicon.ico" alt="B">
+                    </button>
+                    <button type="button" class="engine" data-engine="youtube" title="YouTube">
+                        <img src="https://www.youtube.com/favicon.ico" alt="Y">
+                    </button>
+                    <button type="button" class="engine" data-engine="duckduckgo" title="DuckDuckGo">
+                        <img src="https://duckduckgo.com/favicon.ico" alt="D">
+                    </button>
+                </div>
+                <div class="search-input-wrapper">
+                    <i class="fa-solid fa-magnifying-glass search-icon"></i>
+                    <input type="text" id="search-input" placeholder="Tìm kiếm..." autocomplete="off">
+                    <button type="button" class="voice-btn" id="voice-btn" title="Tìm bằng giọng nói">
+                        <i class="fa-solid fa-microphone"></i>
+                    </button>
+                </div>
+            </form>
+        </section>
+
+        <!-- Quick Links / Shortcuts -->
+        <section class="shortcuts-section" id="shortcuts-section">
+            <div class="shortcuts-header">
+                <div class="header-left">
+                    <span>Ứng dụng</span>
+                </div>
+                <button class="add-shortcut-btn" id="add-shortcut-btn" title="Thêm">
+                    <i class="fa-solid fa-plus"></i>
+                </button>
+            </div>
+            <div class="shortcuts-container-scroll">
+                <div class="shortcuts-grid" id="shortcuts-grid">
+                    <!-- Folders and Apps will be rendered here -->
+                </div>
+            </div>
+        </section>
+
+        <!-- Folder Expanded View -->
+        <div id="folder-view" class="folder-view">
+            <div class="folder-view-overlay"></div>
+            <div class="folder-view-content">
+                <div class="folder-header">
+                    <h2 id="folder-name-display">Tên thư mục</h2>
+                    <button id="edit-folder-name" class="edit-folder-btn" title="Sửa tên thư mục"><i class="fa-solid fa-pencil"></i></button>
+                </div>
+                <div id="folder-grid" class="shortcuts-grid">
+                    <!-- Folder items here -->
+                </div>
+            </div>
+        </div>
+
+        <!-- AI Tools -->
+        <section class="ai-section" id="ai-section">
+            <div class="ai-header">Công cụ AI</div>
+            <div class="ai-grid">
+                <a href="https://chat.openai.com" class="ai-card chatgpt">
+                    <i class="fa-solid fa-robot"></i>
+                    <span>ChatGPT</span>
+                </a>
+                <a href="https://gemini.google.com" class="ai-card gemini">
+                    <i class="fa-solid fa-gem"></i>
+                    <span>Gemini</span>
+                </a>
+                <a href="https://copilot.microsoft.com" class="ai-card copilot">
+                    <i class="fa-solid fa-wand-magic-sparkles"></i>
+                    <span>Copilot</span>
+                </a>
+                <a href="https://claude.ai" class="ai-card claude">
+                    <i class="fa-solid fa-brain"></i>
+                    <span>Claude</span>
+                </a>
+                <a href="https://www.perplexity.ai" class="ai-card perplexity">
+                    <i class="fa-solid fa-atom"></i>
+                    <span>Perplexity</span>
+                </a>
+            </div>
+        </section>
+
+    <!-- Quote -->
+    <section class="quote-section" id="quote-section">
+        <p class="quote-text" id="quote-text">"Hãy bắt đầu ngày mới với năng lượng tích cực!"</p>
+        <span class="quote-author" id="quote-author">— Pro Extensions</span>
+    </section>
+</main>
+
+<!-- Folder Expanded View -->
+<div id="folder-view" class="folder-view">
+    <div class="folder-view-overlay"></div>
+    <div class="folder-view-content">
+        <div class="folder-header">
+            <h2 id="folder-name-display">Tên thư mục</h2>
+            <button id="edit-folder-name" class="edit-folder-btn"><i class="fa-solid fa-pen"></i></button>
+        </div>
+        <div id="folder-grid" class="shortcuts-grid">
+            <!-- Folder items here -->
+        </div>
+    </div>
+</div>
+
+<!-- Todo Panel (Slide) -->
+    <aside class="todo-panel" id="todo-panel">
+        <div class="todo-header">
+            <h3><i class="fa-solid fa-list-check"></i> Việc cần làm</h3>
+            <button class="close-todo" id="close-todo"><i class="fa-solid fa-xmark"></i></button>
+        </div>
+        <div class="todo-input">
+            <input type="text" id="todo-input" placeholder="Thêm việc mới...">
+            <button id="add-todo"><i class="fa-solid fa-plus"></i></button>
+        </div>
+        <ul class="todo-list" id="todo-list"></ul>
+        <div class="todo-footer">
+            <span id="todo-count">0 việc</span>
+            <button id="clear-done">Xóa đã xong</button>
+        </div>
+    </aside>
+
+    <!-- Floating Buttons -->
+    <div class="fab-group">
+        <button class="fab" id="todo-fab" title="Việc cần làm">
+            <i class="fa-solid fa-list-check"></i>
+        </button>
+    </div>
+
+    <!-- Add Shortcut Modal -->
+    <div class="modal" id="shortcut-modal">
+        <div class="modal-overlay"></div>
+        <div class="modal-box">
+            <div class="modal-header">
+                <h3>Thêm lối tắt</h3>
+                <button class="modal-close" id="modal-close"><i class="fa-solid fa-xmark"></i></button>
+            </div>
+            <div class="modal-body">
+                <div class="input-group">
+                    <label for="shortcut-name">Tên</label>
+                    <input type="text" id="shortcut-name" placeholder="VD: Google">
+                </div>
+                <div class="input-group">
+                    <label for="shortcut-url">Địa chỉ URL</label>
+                    <input type="text" id="shortcut-url" placeholder="https://google.com">
+                </div>
+            </div>
+            <div class="modal-actions">
+                <button class="btn-cancel" id="modal-cancel">Hủy</button>
+                <button class="btn-save" id="modal-save">Lưu</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="newtab.js"></script>
+</body>
+</html>

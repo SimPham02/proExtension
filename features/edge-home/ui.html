@@ -1,0 +1,106 @@
+<div class="edge-home-settings">
+    <div class="settings-header">
+        <div class="header-icon">
+            <i class="fa-solid fa-wand-magic-sparkles"></i>
+        </div>
+        <div class="header-text">
+            <h3>Trang chủ Pro</h3>
+            <p>Tùy chỉnh giao diện Tab mới</p>
+        </div>
+    </div>
+
+    <div class="settings-body">
+        <!-- Section: Display -->
+        <div class="settings-section">
+            <div class="section-title">Hiển thị thành phần</div>
+            <div class="switch-grid">
+                <div class="switch-item">
+                    <div class="item-info">
+                        <i class="fa-solid fa-clock"></i>
+                        <span>Đồng hồ</span>
+                    </div>
+                    <label class="modern-switch">
+                        <input type="checkbox" id="show-clock" checked>
+                        <span class="slider"></span>
+                    </label>
+                </div>
+                <div class="switch-item">
+                    <div class="item-info">
+                        <i class="fa-solid fa-magnifying-glass"></i>
+                        <span>Tìm kiếm</span>
+                    </div>
+                    <label class="modern-switch">
+                        <input type="checkbox" id="show-search" checked>
+                        <span class="slider"></span>
+                    </label>
+                </div>
+                <div class="switch-item">
+                    <div class="item-info">
+                        <i class="fa-solid fa-bookmark"></i>
+                        <span>Lối tắt</span>
+                    </div>
+                    <label class="modern-switch">
+                        <input type="checkbox" id="show-shortcuts" checked>
+                        <span class="slider"></span>
+                    </label>
+                </div>
+                <div class="switch-item">
+                    <div class="item-info">
+                        <i class="fa-solid fa-cloud-sun"></i>
+                        <span>Thời tiết</span>
+                    </div>
+                    <label class="modern-switch">
+                        <input type="checkbox" id="show-weather" checked>
+                        <span class="slider"></span>
+                    </label>
+                </div>
+                <div class="switch-item">
+                    <div class="item-info">
+                        <i class="fa-solid fa-robot"></i>
+                        <span>Công cụ AI</span>
+                    </div>
+                    <label class="modern-switch">
+                        <input type="checkbox" id="show-ai-tools" checked>
+                        <span class="slider"></span>
+                    </label>
+                </div>
+                <div class="switch-item">
+                    <div class="item-info">
+                        <i class="fa-solid fa-quote-left"></i>
+                        <span>Trích dẫn</span>
+                    </div>
+                    <label class="modern-switch">
+                        <input type="checkbox" id="show-quote" checked>
+                        <span class="slider"></span>
+                    </label>
+                </div>
+            </div>
+        </div>
+
+        <!-- Section: Personalization -->
+        <div class="settings-section">
+            <div class="section-title">Cá nhân hóa</div>
+            <div class="input-row">
+                <div class="input-group">
+                    <label for="user-name">Tên hiển thị</label>
+                    <div class="input-wrapper">
+                        <input type="text" id="user-name" placeholder="VD: Minh">
+                    </div>
+                </div>
+            </div>
+            <!-- Search-engine config removed (managed on New Tab) -->
+        </div>
+    </div>
+
+    <div class="settings-footer">
+        <button id="reset-home-settings" class="btn-icon" title="Đặt lại mặc định">
+            <i class="fa-solid fa-rotate-left"></i>
+        </button>
+        <button id="save-home-settings" class="btn-save">
+            <span>Lưu thay đổi</span>
+            <i class="fa-solid fa-arrow-right"></i>
+        </button>
+    </div>
+
+    <div class="status-message" id="status-message"></div>
+</div>

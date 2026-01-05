@@ -54,5 +54,13 @@ export const FEATURES = [
     icon: 'fa-solid fa-file-shield',
     ui: 'features/studocu/ui.html',
     logic: async () => (await import('./features/studocu/logic.js'))
+  },
+  {
+    key: 'edge-home',
+    name: 'Tùy chỉnh Home Edge',
+    icon: 'fa-solid fa-house-chimney',
+    ui: 'features/edge-home/ui.html',
+    logic: async () => (await import('./features/edge-home/logic.js')),
+    style: 'features/edge-home/style.css'
   }
 ];

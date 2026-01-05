@@ -156,8 +156,18 @@ document.addEventListener('DOMContentLoaded', () => {
                 fetch(feature.ui).then(r => r.text()),
                 feature.logic ? feature.logic() : null
             ]);
+            // Load feature-specific styles if exists
+            if (feature.style) {
+                const existingStyle = document.getElementById('feature-style');
+                if (existingStyle) existingStyle.remove();
+                const link = document.createElement('link');
+                link.id = 'feature-style';
+                link.rel = 'stylesheet';
+                link.href = feature.style;
+                document.head.appendChild(link);
+            }
             featureContent.innerHTML = html;
-            logic?.initUI?.();
+            logic?.init?.() || logic?.initUI?.();
         } catch (e) {
             featureContent.innerHTML = `<div style="color:#ef4444;padding:10px">Error: ${e.message}</div>`;
         }
