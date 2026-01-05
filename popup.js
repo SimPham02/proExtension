@@ -1,4 +1,4 @@
-import { FEATURES } from './features.js';
+import { FEATURES } from './features/favorites/features.js';
 
 // Feature lookup map for O(1) access
 const FEATURE_MAP = new Map(FEATURES.map(f => [f.key, f]));
@@ -21,7 +21,7 @@ document.addEventListener('DOMContentLoaded', () => {
     document.querySelector('header')?.addEventListener('click', e => {
         const btn = e.target.closest('.btn-icon');
         if (!btn) return;
-        if (btn.id === 'open-favorites') window.open('favorites.html', '_blank');
+        if (btn.id === 'open-favorites') window.open('features/favorites/favorites.html', '_blank');
         if (btn.id === 'open-settings') openSettings();
     });
 
