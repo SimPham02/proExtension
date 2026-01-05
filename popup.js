@@ -1,4 +1,4 @@
-import { FEATURES } from './features/favorites/features.js';
+import { FEATURES } from './features.js';
 
 // Feature lookup map for O(1) access
 const FEATURE_MAP = new Map(FEATURES.map(f => [f.key, f]));

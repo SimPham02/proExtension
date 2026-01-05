@@ -59,17 +59,31 @@ document.addEventListener('DOMContentLoaded', async () => {
     initTodo();
     initQuote();
     applySettings();
+    // Wire settings button on new tab
+    const settingsFab = document.getElementById('settings-fab');
+    if (settingsFab) settingsFab.addEventListener('click', openSettings);
 });
 
 // ===== Load dữ liệu =====
 async function loadData() {
     try {
-        const result = await chrome.storage.sync.get(['edgeHomeSettings', 'edgeHomeShortcuts', 'edgeHomeTodos']);
-        state.settings = result.edgeHomeSettings || {};
-        state.shortcuts = result.edgeHomeShortcuts || CONFIG.defaultShortcuts;
+        // Migrate from sync to local if needed, or just read local
+        // We prefer local for settings now because of potential image data
+        const localResult = await chrome.storage.local.get(['edgeHomeSettings', 'edgeHomeShortcuts', 'edgeHomeTodos']);
+        const syncResult = await chrome.storage.sync.get(['edgeHomeSettings', 'edgeHomeShortcuts', 'edgeHomeTodos']);
+        
+        // Merge or prioritize local. If local is empty but sync has data, migrate it.
+        if (!localResult.edgeHomeSettings && syncResult.edgeHomeSettings) {
+            state.settings = syncResult.edgeHomeSettings;
+            await chrome.storage.local.set({ edgeHomeSettings: state.settings });
+        } else {
+            state.settings = localResult.edgeHomeSettings || {};
+        }
+
+        state.shortcuts = localResult.edgeHomeShortcuts || syncResult.edgeHomeShortcuts || CONFIG.defaultShortcuts;
         // normalize
         state.shortcuts = state.shortcuts.map(s => ({ pinned: false, folder: '', ...s }));
-        state.todos = result.edgeHomeTodos || [];
+        state.todos = localResult.edgeHomeTodos || syncResult.edgeHomeTodos || [];
         state.currentEngine = state.settings.searchEngine || 'google';
     } catch (e) {
         console.error('Lỗi load dữ liệu:', e);
@@ -85,6 +99,43 @@ function applySettings() {
     toggle('ai-section', s.showAiTools ?? true);
     toggle('quote-section', s.showQuote ?? true);
     toggle('weather', s.showWeather ?? true);
+
+    // Apply Background
+    const bgType = s.bgType || 'gradient';
+    const bgValue = s.bgValue;
+    
+    // Reset styles first
+    document.body.style.background = '';
+    document.body.style.backgroundImage = '';
+    document.body.style.backgroundColor = '';
+    document.body.style.backgroundRepeat = '';
+    document.body.style.backgroundSize = '';
+    document.body.style.backgroundPosition = '';
+    document.body.style.backgroundAttachment = '';
+
+    if (bgType === 'image' && bgValue) {
+        document.body.style.backgroundImage = bgValue;
+        document.body.style.backgroundRepeat = 'no-repeat';
+        document.body.style.backgroundSize = 'cover';
+        document.body.style.backgroundPosition = 'center';
+        document.body.style.backgroundAttachment = 'fixed';
+    } else if (bgType === 'solid' && bgValue) {
+        document.body.style.backgroundColor = bgValue;
+    } else if (bgType === 'gradient' && bgValue) {
+        // Always use backgroundImage for gradients for best compatibility
+        document.body.style.backgroundImage = bgValue;
+        document.body.style.backgroundRepeat = 'no-repeat';
+        document.body.style.backgroundSize = 'cover';
+        document.body.style.backgroundPosition = 'center';
+        document.body.style.backgroundAttachment = 'fixed';
+    } else {
+        // Default gradient
+        document.body.style.backgroundImage = 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)';
+        document.body.style.backgroundRepeat = 'no-repeat';
+        document.body.style.backgroundSize = 'cover';
+        document.body.style.backgroundPosition = 'center';
+        document.body.style.backgroundAttachment = 'fixed';
+    }
 }
 
 function toggle(id, show) {
@@ -826,5 +877,287 @@ function initQuote() {
 // ===== Lưu cài đặt =====
 async function saveSettings(update) {
     state.settings = { ...state.settings, ...update };
-    await chrome.storage.sync.set({ edgeHomeSettings: state.settings });
+    // Save to local storage to support large image data
+    await chrome.storage.local.set({ edgeHomeSettings: state.settings });
+}
+
+// ===== Settings UI loader & bindings =====
+async function openSettings() {
+    try {
+        const modal = document.getElementById('settings-modal');
+        const container = document.getElementById('settings-container');
+
+        // Ensure settings styles are injected once
+        if (!document.getElementById('edge-home-style')) {
+            const link = document.createElement('link');
+            link.id = 'edge-home-style';
+            link.rel = 'stylesheet';
+            link.href = 'style.css';
+            document.head.appendChild(link);
+        }
+
+        // Load ui.html (same folder)
+        const res = await fetch('ui.html');
+        if (!res.ok) throw new Error('Không thể tải giao diện cài đặt');
+        const html = await res.text();
+        container.innerHTML = html;
+        modal.classList.add('open');
+
+        // Close when clicking overlay or pressing Escape
+        modal.querySelector('.modal-overlay')?.addEventListener('click', closeSettings);
+        const escHandler = (e) => { if (e.key === 'Escape') closeSettings(); };
+        document.addEventListener('keydown', escHandler);
+
+        // Wire buttons
+        modal.querySelector('#reset-home-settings')?.addEventListener('click', async () => {
+            // Reset to defaults
+            state.settings = {};
+            await chrome.storage.sync.remove('edgeHomeSettings');
+            applySettings();
+            populateSettingsInputs(container);
+            showStatus(container, 'Đã đặt lại mặc định');
+        });
+
+        modal.querySelector('#save-home-settings')?.addEventListener('click', async () => {
+            const newSettings = collectSettingsFrom(container);
+            await saveSettings(newSettings);
+            applySettings();
+            showStatus(container, 'Lưu thành công');
+            setTimeout(closeSettings, 600);
+        });
+
+        // Tab Switching Logic
+        const tabs = container.querySelectorAll('.nav-item');
+        const contents = container.querySelectorAll('.tab-content');
+        tabs.forEach(tab => {
+            tab.addEventListener('click', () => {
+                tabs.forEach(t => t.classList.remove('active'));
+                contents.forEach(c => c.classList.remove('active'));
+                tab.classList.add('active');
+                container.querySelector(`#tab-${tab.dataset.tab}`).classList.add('active');
+            });
+        });
+
+        // Background Settings Logic
+        initBackgroundSettings(container);
+
+        // Populate inputs from current settings
+        populateSettingsInputs(container);
+
+        // Helper to close and cleanup
+        function closeSettings() {
+            modal.classList.remove('open');
+            document.removeEventListener('keydown', escHandler);
+        }
+    } catch (e) {
+        console.error(e);
+    }
+}
+
+function initBackgroundSettings(root) {
+    const bgTypeBtns = root.querySelectorAll('.bg-type-btn');
+    const bgPanels = root.querySelectorAll('.bg-options-panel');
+    
+    // Type switching
+    bgTypeBtns.forEach(btn => {
+        btn.addEventListener('click', () => {
+            bgTypeBtns.forEach(b => b.classList.remove('active'));
+            bgPanels.forEach(p => p.classList.remove('active'));
+            btn.classList.add('active');
+            root.querySelector(`#bg-panel-${btn.dataset.bgType}`).classList.add('active');
+        });
+    });
+
+    // Generate Gradients
+    const gradients = [
+        'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+        'linear-gradient(135deg, #6366f1 0%, #a855f7 100%)',
+        'linear-gradient(to right, #4facfe 0%, #00f2fe 100%)',
+        'linear-gradient(to top, #30cfd0 0%, #330867 100%)',
+        'linear-gradient(120deg, #f093fb 0%, #f5576c 100%)',
+        'linear-gradient(to right, #43e97b 0%, #38f9d7 100%)',
+        'linear-gradient(to top, #5ee7df 0%, #b490ca 100%)',
+        'linear-gradient(to top, #9890e3 0%, #b1f4cf 100%)',
+        'radial-gradient(circle at 15% 15%, rgba(99, 102, 241, 0.12) 0%, transparent 50%), radial-gradient(circle at 85% 85%, rgba(236, 72, 153, 0.1) 0%, transparent 50%), radial-gradient(circle at 50% 50%, rgba(14, 165, 233, 0.08) 0%, transparent 60%)' // Default
+    ];
+    
+    const gradientGrid = root.querySelector('#gradient-grid');
+    gradients.forEach(g => {
+        const el = document.createElement('div');
+        el.className = 'color-swatch';
+        el.style.backgroundImage = g;
+        el.dataset.bgValue = g;
+        el.onclick = () => selectBackground(root, 'gradient', g, el);
+        gradientGrid.appendChild(el);
+    });
+
+    // Generate Solid Colors
+    const colors = [
+        '#0f172a', '#1e1b4b', '#172554', '#022c22', '#312e81', '#4c1d95', '#831843', '#881337', '#000000'
+    ];
+    const solidGrid = root.querySelector('#solid-grid');
+    colors.forEach(c => {
+        const el = document.createElement('div');
+        el.className = 'color-swatch';
+        el.style.background = c;
+        el.dataset.bgValue = c;
+        el.onclick = () => selectBackground(root, 'solid', c, el);
+        solidGrid.appendChild(el);
+    });
+
+    // Image Input (URL)
+    const imgInput = root.querySelector('#bg-image-url');
+    const imgPreview = root.querySelector('#bg-image-preview');
+    imgInput.addEventListener('input', () => {
+        const url = imgInput.value.trim();
+        if (url) {
+            imgPreview.style.backgroundImage = `url('${url}')`;
+            imgPreview.textContent = '';
+            // Auto-select image type if typing
+            root.dataset.selectedBgType = 'image';
+            root.dataset.selectedBgValue = `url('${url}')`;
+        }
+    });
+
+    // Image Input (File Upload)
+    const fileInput = root.querySelector('#bg-image-upload');
+    fileInput.addEventListener('change', (e) => {
+        const file = e.target.files[0];
+        if (!file) return;
+
+        if (file.size > 2 * 1024 * 1024) {
+            alert('File quá lớn! Vui lòng chọn ảnh dưới 2MB.');
+            fileInput.value = '';
+            return;
+        }
+
+        const reader = new FileReader();
+        reader.onload = (event) => {
+            const result = event.target.result;
+            imgPreview.style.backgroundImage = `url('${result}')`;
+            imgPreview.textContent = '';
+            
+            // Auto-select image type
+            root.dataset.selectedBgType = 'image';
+            root.dataset.selectedBgValue = `url('${result}')`;
+            
+            // Clear URL input to avoid confusion
+            imgInput.value = '';
+            
+            // Switch to image tab if not active (though input is inside it)
+            const imgTabBtn = root.querySelector('.bg-type-btn[data-bg-type="image"]');
+            if (imgTabBtn) imgTabBtn.click();
+        };
+        reader.readAsDataURL(file);
+    });
+}
+
+function selectBackground(root, type, value, element) {
+    // Visual selection
+    root.querySelectorAll('.color-swatch').forEach(el => el.classList.remove('active'));
+    if (element) element.classList.add('active');
+    
+    // Store selection in dataset for collection
+    root.dataset.selectedBgType = type;
+    root.dataset.selectedBgValue = value;
+}
+
+function collectSettingsFrom(root) {
+    const getChecked = (id, def) => {
+        const el = root.querySelector(`#${id}`);
+        return el ? !!el.checked : def;
+    };
+
+    // Background collection
+    let bgType = root.dataset.selectedBgType;
+    let bgValue = root.dataset.selectedBgValue;
+    
+    // If image tab is active, prefer input value
+    const activeTab = root.querySelector('.bg-type-btn.active');
+    if (activeTab && activeTab.dataset.bgType === 'image') {
+        const url = root.querySelector('#bg-image-url').value.trim();
+        if (url) {
+            bgType = 'image';
+            bgValue = `url('${url}')`;
+        }
+    }
+
+    return {
+        showClock: getChecked('show-clock', true),
+        showSearch: getChecked('show-search', true),
+        showShortcuts: getChecked('show-shortcuts', true),
+        showWeather: getChecked('show-weather', true),
+        showAiTools: getChecked('show-ai-tools', true),
+        showQuote: getChecked('show-quote', true),
+        userName: (root.querySelector('#user-name')?.value || '').trim(),
+        bgType: bgType || state.settings.bgType || 'gradient',
+        bgValue: bgValue || state.settings.bgValue
+    };
+}
+
+function populateSettingsInputs(root) {
+    const s = state.settings || {};
+    const setChecked = (id, val) => { const el = root.querySelector(`#${id}`); if (el) el.checked = val; };
+    setChecked('show-clock', s.showClock ?? true);
+    setChecked('show-search', s.showSearch ?? true);
+    setChecked('show-shortcuts', s.showShortcuts ?? true);
+    setChecked('show-weather', s.showWeather ?? true);
+    setChecked('show-ai-tools', s.showAiTools ?? true);
+    setChecked('show-quote', s.showQuote ?? true);
+    if (root.querySelector('#user-name')) root.querySelector('#user-name').value = s.userName || '';
+
+    // Populate Background
+    if (s.bgType) {
+        const typeBtn = root.querySelector(`.bg-type-btn[data-bg-type="${s.bgType}"]`);
+        if (typeBtn) typeBtn.click();
+        
+        if (s.bgType === 'image' && s.bgValue) {
+            // Extract URL from url('...')
+            const match = s.bgValue.match(/url\(['"]?(.*?)['"]?\)/);
+            if (match) {
+                const url = match[1];
+                // Only set URL input if it's not a data URI (too long)
+                if (!url.startsWith('data:')) {
+                    root.querySelector('#bg-image-url').value = url;
+                }
+                root.querySelector('#bg-image-preview').style.backgroundImage = s.bgValue;
+                root.querySelector('#bg-image-preview').textContent = '';
+            }
+        } else if (s.bgValue) {
+            // Highlight swatch by comparing raw data-bg-value (for both solid and gradient)
+            const swatches = root.querySelectorAll('.color-swatch');
+            swatches.forEach(sw => {
+                // Compare as string, ignore whitespace
+                if ((sw.dataset.bgValue || '').replace(/\s+/g, '') === (s.bgValue || '').replace(/\s+/g, '')) {
+                    sw.classList.add('active');
+                }
+            });
+        }
+        
+        root.dataset.selectedBgType = s.bgType;
+        root.dataset.selectedBgValue = s.bgValue;
+    }
+}
+
+function showStatus(root, msg) {
+    // Prefer the in-modal status message, fall back to a simple toast
+    const status = root.querySelector('#status-message');
+    if (status) {
+        status.textContent = msg;
+        status.classList.add('show');
+        setTimeout(() => { if (status) status.classList.remove('show'); }, 1800);
+        return;
+    }
+
+    // Fallback: create a transient toast
+    let toast = document.getElementById('edge-home-toast');
+    if (!toast) {
+        toast = document.createElement('div');
+        toast.id = 'edge-home-toast';
+        toast.className = 'status-message show';
+        document.body.appendChild(toast);
+    }
+    toast.textContent = msg;
+    toast.classList.add('show');
+    setTimeout(() => { toast.classList.remove('show'); }, 1800);
 }

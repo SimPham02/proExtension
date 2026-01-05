@@ -198,7 +198,7 @@ body {
 }
 
 .time {
-    font-size: clamp(60px, 12vw, 100px);
+    font-size: clamp(36px, 8vw, 64px);
     font-weight: 700;
     letter-spacing: -4px;
     background: linear-gradient(180deg, var(--text-primary) 20%, rgba(255,255,255,0.7) 100%);
