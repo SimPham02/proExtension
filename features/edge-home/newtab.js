@@ -54,6 +54,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     await loadData();
     initClock();
     initWeather();
+    renderSearchEngineSelect(); // Gọi render trước khi init search
     initSearch();
     initShortcuts();
     initTodo();
@@ -63,6 +64,64 @@ document.addEventListener('DOMContentLoaded', async () => {
     const settingsFab = document.getElementById('settings-fab');
     if (settingsFab) settingsFab.addEventListener('click', openSettings);
 });
+// Render select menu với icon cho từng engine
+function renderSearchEngineSelect() {
+    const dropdown = document.getElementById('search-engine-dropdown');
+    const dropbtn = document.getElementById('current-engine-btn');
+    const currentIcon = document.getElementById('current-engine-icon');
+    const list = document.getElementById('engine-dropdown-list');
+    
+    if (!dropdown || !dropbtn || !list) return;
+
+    const engines = [
+        { value: 'google', icon: 'https://www.google.com/favicon.ico', name: 'Google' },
+        { value: 'bing', icon: 'https://www.bing.com/favicon.ico', name: 'Bing' },
+        { value: 'youtube', icon: 'https://www.youtube.com/favicon.ico', name: 'YouTube' },
+        { value: 'duckduckgo', icon: 'https://duckduckgo.com/favicon.ico', name: 'DuckDuckGo' }
+    ];
+
+    // Khởi tạo icon hiện tại
+    const current = engines.find(e => e.value === state.currentEngine) || engines[0];
+    currentIcon.src = current.icon;
+
+    // Render danh sách icon
+    list.innerHTML = '';
+    engines.forEach(engine => {
+        const item = document.createElement('div');
+        item.className = `engine-item ${engine.value === state.currentEngine ? 'active' : ''}`;
+        item.innerHTML = `<img src="${engine.icon}" alt="${engine.name}" title="${engine.name}">`;
+        item.addEventListener('click', () => {
+            state.currentEngine = engine.value;
+            currentIcon.src = engine.icon;
+            saveSettings({ searchEngine: state.currentEngine });
+            
+            // Update active state
+            document.querySelectorAll('.engine-item').forEach(i => i.classList.remove('active'));
+            item.classList.add('active');
+            
+            list.classList.remove('show');
+            dropdown.classList.remove('open');
+        });
+        list.appendChild(item);
+    });
+
+    // Toggle dropdown
+    dropbtn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        list.classList.toggle('show');
+        dropdown.classList.toggle('open');
+    });
+
+    // Đóng khi click bên ngoài
+    document.addEventListener('click', () => {
+        list.classList.remove('show');
+        dropdown.classList.remove('open');
+    });
+}
+
+function updateSelectIcon(select) {
+    // Hàm này không còn dùng nữa vì đã chuyển sang custom dropdown
+}
 
 // ===== Load dữ liệu =====
 async function loadData() {
@@ -353,21 +412,8 @@ async function initWeather() {
 function initSearch() {
     const form = document.getElementById('search-form');
     const input = document.getElementById('search-input');
-    const engines = document.querySelectorAll('.engine');
     const voiceBtn = document.getElementById('voice-btn');
     const imageBtn = document.getElementById('image-btn');
-    const imageInput = document.getElementById('image-input');
-    
-    // Chọn công cụ tìm kiếm
-    engines.forEach(btn => {
-        btn.classList.toggle('active', btn.dataset.engine === state.currentEngine);
-        btn.addEventListener('click', () => {
-            engines.forEach(b => b.classList.remove('active'));
-            btn.classList.add('active');
-            state.currentEngine = btn.dataset.engine;
-            saveSettings({ searchEngine: state.currentEngine });
-        });
-    });
     
     // Submit form
     form.addEventListener('submit', (e) => {

@@ -38,22 +38,16 @@
         <!-- Search Box -->
         <section class="search-section" id="search-section">
             <form class="search-box" id="search-form">
-                <div class="search-engines">
-                    <button type="button" class="engine active" data-engine="google" title="Google">
-                        <img src="https://www.google.com/favicon.ico" alt="G">
-                    </button>
-                    <button type="button" class="engine" data-engine="bing" title="Bing">
-                        <img src="https://www.bing.com/favicon.ico" alt="B">
-                    </button>
-                    <button type="button" class="engine" data-engine="youtube" title="YouTube">
-                        <img src="https://www.youtube.com/favicon.ico" alt="Y">
-                    </button>
-                    <button type="button" class="engine" data-engine="duckduckgo" title="DuckDuckGo">
-                        <img src="https://duckduckgo.com/favicon.ico" alt="D">
-                    </button>
-                </div>
                 <div class="search-input-wrapper">
-                    <i class="fa-solid fa-magnifying-glass search-icon"></i>
+                    <div class="search-engine-dropdown" id="search-engine-dropdown">
+                        <button type="button" class="engine-dropbtn" id="current-engine-btn" title="Chọn công cụ tìm kiếm">
+                            <img src="" id="current-engine-icon" alt="">
+                            <i class="fa-solid fa-chevron-down drop-arrow"></i>
+                        </button>
+                        <div class="engine-dropdown-content" id="engine-dropdown-list">
+                            <!-- Các engine icons sẽ được render ở đây -->
+                        </div>
+                    </div>
                     <input type="text" id="search-input" placeholder="Tìm kiếm..." autocomplete="off">
                     <button type="button" class="voice-btn" id="voice-btn" title="Tìm bằng giọng nói">
                         <i class="fa-solid fa-microphone"></i>

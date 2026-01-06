@@ -208,7 +208,7 @@ body {
     line-height: 1;
     filter: drop-shadow(0 8px 20px rgba(0,0,0,0.2));
     font-variant-numeric: tabular-nums;
-}
+}   
 
 .greeting {
     font-size: clamp(18px, 2.5vw, 22px);
@@ -223,8 +223,10 @@ body {
 .search-section {
     width: 100%;
     max-width: 680px;
-    margin: 0 auto;
+    margin: 0 auto 40px auto; /* Thêm margin bottom để không vướng shortcuts */
     animation: fadeIn 0.8s ease-out 0.2s backwards;
+    position: relative;
+    z-index: 1500; /* Đảm bảo thanh search và dropdown luôn ở trên shortcuts */
 }
 
 .search-box {
@@ -282,34 +284,122 @@ body {
     background: linear-gradient(135deg, rgba(255, 255, 255, 0.1), rgba(255, 255, 255, 0.05));
     border: 1px solid rgba(255, 255, 255, 0.15);
     border-radius: 30px;
-    padding: 8px 12px 8px 28px;
+    padding: 6px 12px 6px 12px; /* Đã chỉnh lại padding để cân đối với select icon */
     transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
     backdrop-filter: blur(25px);
     box-shadow: 0 15px 35px rgba(0, 0, 0, 0.2);
 }
 
-.search-input-wrapper:hover {
-    background: rgba(255, 255, 255, 0.12);
-    border-color: rgba(255, 255, 255, 0.3);
-}
-
-.search-input-wrapper:focus-within {
-    background: rgba(255, 255, 255, 0.15);
-    border-color: var(--accent);
-    box-shadow: 0 0 30px rgba(99, 102, 241, 0.3);
-    transform: scale(1.02);
-}
-
-.search-input-wrapper.drag-over {
-    border-color: var(--accent);
-    background: rgba(99, 102, 241, 0.1);
-    box-shadow: 0 0 20px rgba(99, 102, 241, 0.4);
-}
-
-.search-icon {
-    color: var(--text-muted);
-    font-size: 18px;
+/* Custom Icon-only Search Engine Dropdown */
+.search-engine-dropdown {
+    position: relative;
     margin-right: 12px;
+    display: flex;
+    align-items: center;
+}
+
+.engine-dropbtn {
+    background: rgba(255, 255, 255, 0.1);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    min-width: 58px;
+    height: 48px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    padding: 0 10px;
+}
+
+.engine-dropbtn:hover {
+    background: rgba(255, 255, 255, 0.2);
+    border-color: var(--accent);
+}
+
+.engine-dropbtn img {
+    width: 24px;
+    height: 24px;
+    border-radius: 4px;
+    pointer-events: none;
+}
+
+.drop-arrow {
+    font-size: 10px;
+    color: var(--text-muted);
+    transition: transform 0.3s;
+    pointer-events: none;
+}
+
+.search-engine-dropdown.open .drop-arrow {
+    transform: rotate(180deg);
+}
+
+.engine-dropdown-content {
+    display: none;
+    position: absolute;
+    top: calc(100% + 10px);
+    left: 0;
+    background: rgba(30, 30, 50, 0.95); /* Tăng độ đục để nhìn rõ hơn */
+    backdrop-filter: blur(25px);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    min-width: 58px;
+    box-shadow: 0 10px 40px rgba(0,0,0,0.5); /* Tăng shadow */
+    z-index: 2500; /* Cực cao để không bị chồng lấp */
+    padding: 8px;
+    flex-direction: column;
+    gap: 8px;
+    animation: slideDown 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.engine-dropdown-content.show {
+    display: flex;
+}
+
+.engine-item {
+    width: 42px;
+    height: 42px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 10px;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.engine-item:hover {
+    background: rgba(255, 255, 255, 0.1);
+    transform: scale(1.1);
+}
+
+.engine-item.active {
+    background: rgba(99, 102, 241, 0.2);
+    border: 1px solid var(--accent);
+}
+
+.engine-item img {
+    width: 24px;
+    height: 24px;
+    pointer-events: none;
+}
+
+@keyframes slideDown {
+    from { opacity: 0; transform: translateY(-10px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+.search-input-wrapper {
+    display: flex;
+    align-items: center;
+    background: linear-gradient(135deg, rgba(255, 255, 255, 0.1), rgba(255, 255, 255, 0.05));
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    border-radius: 30px;
+    padding: 6px 16px 6px 8px;
+    transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+    backdrop-filter: blur(25px);
+    box-shadow: 0 15px 35px rgba(0, 0, 0, 0.2);
 }
 
 #search-input {
