@@ -712,9 +712,10 @@ body {
     display: flex;
     align-items: center;
     justify-content: center;
-    opacity: 0;
+    opacity: 0; 
     visibility: hidden;
-    transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+    transition: opacity 0.2s ease-out, visibility 0.2s ease-out;
+    will-change: opacity, visibility;
 }
 
 .folder-view.open {
@@ -727,8 +728,9 @@ body {
     inset: 0;
     background: rgba(0, 0, 0, 0.4);
     backdrop-filter: blur(25px);
-    transition: all 0.5s ease;
+    transition: opacity 0.25s ease-out;
     opacity: 0;
+    will-change: opacity;
 }
 
 .folder-view-overlay.drag-over {
@@ -749,9 +751,10 @@ body {
     border-radius: 40px;
     padding: 40px;
     border: 1px solid rgba(255, 255, 255, 0.2);
-    transform: scale(0.8) translateY(40px);
-    transition: all 0.6s cubic-bezier(0.34, 1.56, 0.64, 1);
+    transform: scale(0.9) translateY(20px) translateZ(0);
+    transition: transform 0.35s cubic-bezier(0.25, 0.46, 0.45, 0.94);
     box-shadow: 0 40px 80px rgba(0, 0, 0, 0.6), inset 0 0 0 1px rgba(255, 255, 255, 0.1);
+    will-change: transform;
 }
 
 .folder-view.open .folder-view-content {
@@ -1413,7 +1416,8 @@ body {
     justify-content: center;
     opacity: 0;
     visibility: hidden;
-    transition: all 0.3s ease;
+    transition: opacity 0.2s ease-out, visibility 0.2s ease-out;
+    will-change: opacity, visibility;
 }
 
 .folder-view.open {
@@ -1437,12 +1441,13 @@ body {
     border-radius: 40px;
     padding: 40px;
     border: 1px solid rgba(255, 255, 255, 0.1);
-    transform: scale(0.8);
-    transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+    transform: scale(0.9) translateY(20px) translateZ(0);
+    transition: transform 0.35s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+    will-change: transform;
 }
 
 .folder-view.open .folder-view-content {
-    transform: scale(1);
+    transform: scale(1) translateY(0);
 }
 
 .folder-header {
