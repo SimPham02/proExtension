@@ -71,6 +71,11 @@ body {
     min-height: 100vh;
     overflow-x: hidden;
     line-height: 1.6;
+    background-repeat: no-repeat;
+    background-size: cover;
+    background-position: center;
+    background-attachment: fixed;
+    transition: background-color 0.8s ease-in-out, background-image 0.8s ease-in-out;
 }
 
 ::selection {

@@ -120,6 +120,7 @@
                         <button class="bg-type-btn active" data-bg-type="gradient">Gradient</button>
                         <button class="bg-type-btn" data-bg-type="solid">Màu đơn</button>
                         <button class="bg-type-btn" data-bg-type="image">Hình ảnh</button>
+                        <button class="bg-type-btn" data-bg-type="slideshow">Trình chiếu</button>
                     </div>
 
                     <div class="bg-options-panel active" id="bg-panel-gradient">
@@ -147,6 +148,22 @@
                         </div>
                         <div class="image-preview" id="bg-image-preview">
                             <span>Xem trước</span>
+                        </div>
+                    </div>
+
+                    <div class="bg-options-panel" id="bg-panel-slideshow">
+                        <div class="input-group">
+                            <label>Thời gian chuyển cảnh (giây)</label>
+                            <input type="number" id="slideshow-interval" value="30" min="5">
+                            <p class="input-hint">Thời gian tự động thay đổi hình nền</p>
+                        </div>
+                        <div class="input-group">
+                            <label>Danh sách hình nền (URL hoặc Gradient)</label>
+                            <textarea id="slideshow-list" placeholder="Mỗi dòng một URL hình nền hoặc mã Gradient" rows="5"></textarea>
+                            <p class="input-hint">Dán các liên kết ảnh hoặc gradient, mỗi cái trên một dòng.</p>
+                        </div>
+                        <div class="slideshow-controls">
+                            <button type="button" class="btn-secondary" id="add-current-to-slideshow">Thêm hình nền hiện tại</button>
                         </div>
                     </div>
                 </div>

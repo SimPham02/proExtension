@@ -48,6 +48,8 @@ let state = {
     todos: [],
     currentEngine: 'google'
 };
+let slideshowTimer = null;
+let currentSlideIndex = 0;
 
 // ===== Khởi tạo =====
 document.addEventListener('DOMContentLoaded', async () => {
@@ -159,41 +161,90 @@ function applySettings() {
     toggle('quote-section', s.showQuote ?? true);
     toggle('weather', s.showWeather ?? true);
 
+    // Stop existing slideshow if any
+    if (slideshowTimer) {
+        clearInterval(slideshowTimer);
+        slideshowTimer = null;
+    }
+
     // Apply Background
     const bgType = s.bgType || 'gradient';
     const bgValue = s.bgValue;
     
-    // Reset styles first
-    document.body.style.background = '';
-    document.body.style.backgroundImage = '';
-    document.body.style.backgroundColor = '';
-    document.body.style.backgroundRepeat = '';
-    document.body.style.backgroundSize = '';
-    document.body.style.backgroundPosition = '';
-    document.body.style.backgroundAttachment = '';
-
-    if (bgType === 'image' && bgValue) {
-        document.body.style.backgroundImage = bgValue;
-        document.body.style.backgroundRepeat = 'no-repeat';
-        document.body.style.backgroundSize = 'cover';
-        document.body.style.backgroundPosition = 'center';
-        document.body.style.backgroundAttachment = 'fixed';
-    } else if (bgType === 'solid' && bgValue) {
-        document.body.style.backgroundColor = bgValue;
-    } else if (bgType === 'gradient' && bgValue) {
-        // Always use backgroundImage for gradients for best compatibility
-        document.body.style.backgroundImage = bgValue;
-        document.body.style.backgroundRepeat = 'no-repeat';
-        document.body.style.backgroundSize = 'cover';
-        document.body.style.backgroundPosition = 'center';
-        document.body.style.backgroundAttachment = 'fixed';
+    if (bgType === 'slideshow') {
+        const list = (s.bgSlideshowList || []).filter(item => item.trim());
+        if (list.length > 0) {
+            const interval = (s.bgSlideshowInterval || 30) * 1000;
+            
+            // Set first slide if not already showing it
+            if (currentSlideIndex >= list.length) currentSlideIndex = 0;
+            setPageBackground(list[currentSlideIndex]);
+            
+            if (list.length > 1) {
+                slideshowTimer = setInterval(() => {
+                    currentSlideIndex = (currentSlideIndex + 1) % list.length;
+                    setPageBackground(list[currentSlideIndex]);
+                }, interval);
+            }
+        } else {
+            // Default if list is empty
+            setPageBackground('linear-gradient(135deg, #667eea 0%, #764ba2 100%)');
+        }
     } else {
-        // Default gradient
+        setPageBackground(bgValue, bgType);
+    }
+}
+
+function setPageBackground(value, type) {
+    if (!value) {
         document.body.style.backgroundImage = 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)';
-        document.body.style.backgroundRepeat = 'no-repeat';
-        document.body.style.backgroundSize = 'cover';
-        document.body.style.backgroundPosition = 'center';
-        document.body.style.backgroundAttachment = 'fixed';
+        document.body.style.backgroundColor = 'transparent';
+        return;
+    }
+
+    // Infer type if not provided (for slideshow)
+    if (!type) {
+        if (value.startsWith('linear-gradient') || value.startsWith('radial-gradient')) {
+            type = 'gradient';
+        } else if (value.startsWith('url(') || value.startsWith('data:') || value.includes('://')) {
+            type = 'image';
+            if (!value.startsWith('url(')) value = `url('${value}')`;
+        } else if (value.startsWith('#') || value.startsWith('rgb')) {
+            type = 'solid';
+        } else {
+            type = 'gradient'; // fallback
+        }
+    }
+
+    if (type === 'image') {
+        const imgUrl = value.match(/url\(['"]?(.*?)['"]?\)/)?.[1] || value;
+        // Basic check to avoid re-setting same image (normalizing some simple cases)
+        const currentBg = document.body.style.backgroundImage.replace(/['"]/g, '');
+        const targetBg = value.replace(/['"]/g, '');
+        if (currentBg === targetBg) return;
+
+        if (imgUrl.startsWith('http') || imgUrl.startsWith('data:')) {
+            const img = new Image();
+            img.onload = () => {
+                document.body.style.backgroundImage = value;
+                document.body.style.backgroundColor = 'transparent';
+            };
+            img.src = imgUrl;
+        } else {
+            document.body.style.backgroundImage = value;
+            document.body.style.backgroundColor = 'transparent';
+        }
+    } else if (type === 'solid') {
+        if (document.body.style.backgroundColor === value && (document.body.style.backgroundImage === 'none' || !document.body.style.backgroundImage)) return;
+        document.body.style.backgroundColor = value;
+        document.body.style.backgroundImage = 'none';
+    } else {
+        const currentBg = document.body.style.backgroundImage.replace(/\s+/g, '');
+        const targetBg = value.replace(/\s+/g, '');
+        if (currentBg === targetBg) return;
+        
+        document.body.style.backgroundImage = value;
+        document.body.style.backgroundColor = 'transparent';
     }
 }
 
@@ -1096,6 +1147,28 @@ function initBackgroundSettings(root) {
         };
         reader.readAsDataURL(file);
     });
+
+    // Slideshow: Add current background to list
+    const addCurrentBtn = root.querySelector('#add-current-to-slideshow');
+    const slideshowList = root.querySelector('#slideshow-list');
+    if (addCurrentBtn && slideshowList) {
+        addCurrentBtn.addEventListener('click', () => {
+            const currentType = root.dataset.selectedBgType;
+            let currentVal = root.dataset.selectedBgValue;
+            
+            // If image is manually typed/uploaded but not saved yet
+            const activeTab = root.querySelector('.bg-type-btn.active');
+            if (activeTab && activeTab.dataset.bgType === 'image') {
+                const urlInput = root.querySelector('#bg-image-url').value.trim();
+                if (urlInput) currentVal = `url('${urlInput}')`;
+            }
+
+            if (currentVal && !slideshowList.value.includes(currentVal)) {
+                const sep = slideshowList.value.trim() ? '\n' : '';
+                slideshowList.value = slideshowList.value.trim() + sep + currentVal;
+            }
+        });
+    }
 }
 
 function selectBackground(root, type, value, element) {
@@ -1126,6 +1199,8 @@ function collectSettingsFrom(root) {
             bgType = 'image';
             bgValue = `url('${url}')`;
         }
+    } else if (activeTab && activeTab.dataset.bgType === 'slideshow') {
+        bgType = 'slideshow';
     }
 
     return {
@@ -1137,7 +1212,9 @@ function collectSettingsFrom(root) {
         showQuote: getChecked('show-quote', true),
         userName: (root.querySelector('#user-name')?.value || '').trim(),
         bgType: bgType || state.settings.bgType || 'gradient',
-        bgValue: bgValue || state.settings.bgValue
+        bgValue: bgValue || state.settings.bgValue,
+        bgSlideshowInterval: parseInt(root.querySelector('#slideshow-interval')?.value || '30', 10),
+        bgSlideshowList: (root.querySelector('#slideshow-list')?.value || '').split('\n').map(s => s.trim()).filter(s => s)
     };
 }
 
@@ -1151,6 +1228,10 @@ function populateSettingsInputs(root) {
     setChecked('show-ai-tools', s.showAiTools ?? true);
     setChecked('show-quote', s.showQuote ?? true);
     if (root.querySelector('#user-name')) root.querySelector('#user-name').value = s.userName || '';
+    
+    // Populate Slideshow settings
+    if (root.querySelector('#slideshow-interval')) root.querySelector('#slideshow-interval').value = s.bgSlideshowInterval || 30;
+    if (root.querySelector('#slideshow-list')) root.querySelector('#slideshow-list').value = (s.bgSlideshowList || []).join('\n');
 
     // Populate Background
     if (s.bgType) {
