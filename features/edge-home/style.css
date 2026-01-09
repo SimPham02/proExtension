@@ -523,6 +523,22 @@ input:checked + .toggle-slider:before {
     margin-top: 12px;
 }
 
+.checkbox-label {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    cursor: pointer;
+    font-size: 14px;
+    color: white;
+}
+
+.checkbox-label input[type="checkbox"] {
+    width: 18px;
+    height: 18px;
+    accent-color: #6366f1;
+    cursor: pointer;
+}
+
 /* Status Message (Toast inside modal) */
 .status-message {
     font-size: 13px;

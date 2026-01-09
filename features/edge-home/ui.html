@@ -153,9 +153,15 @@
 
                     <div class="bg-options-panel" id="bg-panel-slideshow">
                         <div class="input-group">
-                            <label>Thời gian chuyển cảnh (giây)</label>
+                            <label class="checkbox-label">
+                                <input type="checkbox" id="slideshow-on-newtab">
+                                <span>Đổi hình nền mỗi lần mở Tab mới</span>
+                            </label>
+                        </div>
+                        <div class="input-group">
+                            <label>Thời gian chuyển cảnh tự động (giây)</label>
                             <input type="number" id="slideshow-interval" value="30" min="5">
-                            <p class="input-hint">Thời gian tự động thay đổi hình nền</p>
+                            <p class="input-hint">Nhập 0 để tắt tự động chuyển cảnh</p>
                         </div>
                         <div class="input-group">
                             <label>Danh sách hình nền (URL hoặc Gradient)</label>

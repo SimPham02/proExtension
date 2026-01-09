@@ -130,7 +130,8 @@ async function loadData() {
     try {
         // Migrate from sync to local if needed, or just read local
         // We prefer local for settings now because of potential image data
-        const localResult = await chrome.storage.local.get(['edgeHomeSettings', 'edgeHomeShortcuts', 'edgeHomeTodos']);
+        const localKeys = ['edgeHomeSettings', 'edgeHomeShortcuts', 'edgeHomeTodos', 'edgeHomeSlideIndex'];
+        const localResult = await chrome.storage.local.get(localKeys);
         const syncResult = await chrome.storage.sync.get(['edgeHomeSettings', 'edgeHomeShortcuts', 'edgeHomeTodos']);
         
         // Merge or prioritize local. If local is empty but sync has data, migrate it.
@@ -146,6 +147,7 @@ async function loadData() {
         state.shortcuts = state.shortcuts.map(s => ({ pinned: false, folder: '', ...s }));
         state.todos = localResult.edgeHomeTodos || syncResult.edgeHomeTodos || [];
         state.currentEngine = state.settings.searchEngine || 'google';
+        currentSlideIndex = localResult.edgeHomeSlideIndex || 0;
     } catch (e) {
         console.error('Lỗi load dữ liệu:', e);
     }
@@ -174,16 +176,22 @@ function applySettings() {
     if (bgType === 'slideshow') {
         const list = (s.bgSlideshowList || []).filter(item => item.trim());
         if (list.length > 0) {
-            const interval = (s.bgSlideshowInterval || 30) * 1000;
-            
-            // Set first slide if not already showing it
+            // "Change on new tab" logic: increment index and save
+            if (s.bgSlideshowOnNewTab) {
+                currentSlideIndex = (currentSlideIndex + 1) % list.length;
+                chrome.storage.local.set({ edgeHomeSlideIndex: currentSlideIndex });
+            }
+
             if (currentSlideIndex >= list.length) currentSlideIndex = 0;
             setPageBackground(list[currentSlideIndex]);
             
-            if (list.length > 1) {
+            const interval = (s.bgSlideshowInterval || 30) * 1000;
+            // Only start timer if interval > 0 and there are multiple slides
+            if (interval > 0 && list.length > 1) {
                 slideshowTimer = setInterval(() => {
                     currentSlideIndex = (currentSlideIndex + 1) % list.length;
                     setPageBackground(list[currentSlideIndex]);
+                    chrome.storage.local.set({ edgeHomeSlideIndex: currentSlideIndex });
                 }, interval);
             }
         } else {
@@ -1214,7 +1222,8 @@ function collectSettingsFrom(root) {
         bgType: bgType || state.settings.bgType || 'gradient',
         bgValue: bgValue || state.settings.bgValue,
         bgSlideshowInterval: parseInt(root.querySelector('#slideshow-interval')?.value || '30', 10),
-        bgSlideshowList: (root.querySelector('#slideshow-list')?.value || '').split('\n').map(s => s.trim()).filter(s => s)
+        bgSlideshowList: (root.querySelector('#slideshow-list')?.value || '').split('\n').map(s => s.trim()).filter(s => s),
+        bgSlideshowOnNewTab: getChecked('slideshow-on-newtab', false)
     };
 }
 
@@ -1230,6 +1239,7 @@ function populateSettingsInputs(root) {
     if (root.querySelector('#user-name')) root.querySelector('#user-name').value = s.userName || '';
     
     // Populate Slideshow settings
+    setChecked('slideshow-on-newtab', s.bgSlideshowOnNewTab ?? false);
     if (root.querySelector('#slideshow-interval')) root.querySelector('#slideshow-interval').value = s.bgSlideshowInterval || 30;
     if (root.querySelector('#slideshow-list')) root.querySelector('#slideshow-list').value = (s.bgSlideshowList || []).join('\n');
 
