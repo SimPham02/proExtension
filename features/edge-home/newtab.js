@@ -206,7 +206,7 @@ function applySettings() {
 function setPageBackground(value, type) {
     if (!value) {
         document.body.style.backgroundImage = 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)';
-        document.body.style.backgroundColor = 'transparent';
+        document.body.style.backgroundColor = 'var(--bg-primary)';
         return;
     }
 
@@ -226,7 +226,7 @@ function setPageBackground(value, type) {
 
     if (type === 'image') {
         const imgUrl = value.match(/url\(['"]?(.*?)['"]?\)/)?.[1] || value;
-        // Basic check to avoid re-setting same image (normalizing some simple cases)
+        // Basic check to avoid re-setting same image
         const currentBg = document.body.style.backgroundImage.replace(/['"]/g, '');
         const targetBg = value.replace(/['"]/g, '');
         if (currentBg === targetBg) return;
@@ -235,12 +235,12 @@ function setPageBackground(value, type) {
             const img = new Image();
             img.onload = () => {
                 document.body.style.backgroundImage = value;
-                document.body.style.backgroundColor = 'transparent';
+                document.body.style.backgroundColor = 'var(--bg-primary)';
             };
             img.src = imgUrl;
         } else {
             document.body.style.backgroundImage = value;
-            document.body.style.backgroundColor = 'transparent';
+            document.body.style.backgroundColor = 'var(--bg-primary)';
         }
     } else if (type === 'solid') {
         if (document.body.style.backgroundColor === value && (document.body.style.backgroundImage === 'none' || !document.body.style.backgroundImage)) return;
@@ -252,7 +252,8 @@ function setPageBackground(value, type) {
         if (currentBg === targetBg) return;
         
         document.body.style.backgroundImage = value;
-        document.body.style.backgroundColor = 'transparent';
+        // For gradients, keep the theme background color underneath to support transparency
+        document.body.style.backgroundColor = 'var(--bg-primary)';
     }
 }
 
@@ -1161,22 +1162,84 @@ function initBackgroundSettings(root) {
     const slideshowList = root.querySelector('#slideshow-list');
     if (addCurrentBtn && slideshowList) {
         addCurrentBtn.addEventListener('click', () => {
-            const currentType = root.dataset.selectedBgType;
-            let currentVal = root.dataset.selectedBgValue;
+            let currentVal = root.dataset.selectedBgValue || state.settings.bgValue;
             
-            // If image is manually typed/uploaded but not saved yet
+            // If image/gradient type is active but not "selected" via click (e.g. manually typed URL)
             const activeTab = root.querySelector('.bg-type-btn.active');
-            if (activeTab && activeTab.dataset.bgType === 'image') {
-                const urlInput = root.querySelector('#bg-image-url').value.trim();
-                if (urlInput) currentVal = `url('${urlInput}')`;
+            if (activeTab) {
+                const type = activeTab.dataset.bgType;
+                if (type === 'image') {
+                    const urlInput = root.querySelector('#bg-image-url').value.trim();
+                    if (urlInput) currentVal = `url('${urlInput}')`;
+                }
             }
 
-            if (currentVal && !slideshowList.value.includes(currentVal)) {
-                const sep = slideshowList.value.trim() ? '\n' : '';
-                slideshowList.value = slideshowList.value.trim() + sep + currentVal;
+            if (!currentVal) {
+                // Last fallback: default gradient
+                currentVal = 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)';
+            }
+
+            // Normalizing value for comparison
+            const normalizedVal = currentVal.trim();
+            const currentContent = slideshowList.value.trim();
+            const lines = currentContent ? currentContent.split('\n').map(l => l.trim()) : [];
+            
+            if (!lines.includes(normalizedVal)) {
+                lines.push(normalizedVal);
+                slideshowList.value = lines.join('\n');
             }
         });
     }
+
+    // Slideshow: Multiple image upload
+    const slideshowUpload = root.querySelector('#slideshow-image-upload');
+    if (slideshowUpload && slideshowList) {
+        slideshowUpload.addEventListener('change', async (e) => {
+            const files = Array.from(e.target.files);
+            if (!files.length) return;
+
+            const currentContent = slideshowList.value.trim();
+            const lines = currentContent ? currentContent.split('\n').map(l => l.trim()) : [];
+            let addedCount = 0;
+
+            for (const file of files) {
+                if (file.size > 2 * 1024 * 1024) {
+                    console.warn(`File ${file.name} too large`);
+                    continue;
+                }
+
+                try {
+                    const dataUrl = await new Promise((resolve, reject) => {
+                        const reader = new FileReader();
+                        reader.onload = (ev) => resolve(ev.target.result);
+                        reader.onerror = reject;
+                        reader.readAsDataURL(file);
+                    });
+
+                    const val = `url('${dataUrl}')`;
+                    if (!lines.includes(val)) {
+                        lines.push(val);
+                        addedCount++;
+                    }
+                } catch (err) {
+                    console.error('Error reading file:', err);
+                }
+            }
+
+            slideshowList.value = lines.join('\n');
+            slideshowUpload.value = ''; // Reset
+            if (addedCount > 0) {
+                // Optional: show a small toast or just update UI
+            }
+        });
+    }
+
+    // Slideshow: Clear All
+    root.querySelector('#clear-slideshow-list')?.addEventListener('click', () => {
+        if (confirm('Xóa toàn bộ danh sách hình nền trong trình chiếu?')) {
+            slideshowList.value = '';
+        }
+    });
 }
 
 function selectBackground(root, type, value, element) {

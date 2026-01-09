@@ -313,6 +313,9 @@ input:checked + .toggle-slider:before {
     border: 2px solid transparent;
     transition: all 0.2s;
     position: relative;
+    background-color: #0f0f1a; /* Base dark color for transparent gradients */
+    background-size: cover;
+    background-position: center;
 }
 
 .color-swatch:hover {
