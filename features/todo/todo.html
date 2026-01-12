@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Việc cần làm - Pro Extension</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="todo-container">
+        <header class="todo-header">
+            <h1><i class="fa-solid fa-list-check"></i> Việc cần làm</h1>
+            <div class="todo-stats">
+                <div class="stat-item">
+                    <span class="stat-value" id="todo-count">0</span>
+                    <span class="stat-label">Đang làm</span>
+                </div>
+                <div class="stat-item">
+                    <span class="stat-value" id="done-count">0</span>
+                    <span class="stat-label">Đã xong</span>
+                </div>
+            </div>
+        </header>
+
+        <section class="todo-input-section">
+            <div class="search-bar">
+                <i class="fa-solid fa-search"></i>
+                <input type="text" id="search-input" placeholder="Tìm kiếm công việc...">
+                <button id="sort-btn" class="icon-btn" title="Sắp xếp">
+                    <i class="fa-solid fa-sort"></i>
+                </button>
+            </div>
+            <div class="input-group">
+                <div class="priority-selector" id="priority-selector">
+                    <button type="button" class="prio-btn low" data-priority="low" title="Ưu tiên thấp">
+                        <i class="fa-solid fa-flag"></i>
+                    </button>
+                    <button type="button" class="prio-btn medium active" data-priority="medium" title="Ưu tiên trung bình">
+                        <i class="fa-solid fa-flag"></i>
+                    </button>
+                    <button type="button" class="prio-btn high" data-priority="high" title="Ưu tiên cao">
+                        <i class="fa-solid fa-flag"></i>
+                    </button>
+                </div>
+                <input type="text" id="todo-input" class="todo-input" placeholder="Bạn cần làm gì hôm nay?">
+                <div class="date-picker-group">
+                    <input type="number" id="day-input" class="date-part" placeholder="DD" min="1" max="31">
+                    <span class="date-separator">/</span>
+                    <input type="number" id="month-input" class="date-part" placeholder="MM" min="1" max="12">
+                    <span class="date-separator">/</span>
+                    <input type="number" id="year-input" class="date-part" placeholder="YYYY" min="2024" max="2099" value="2026">
+                </div>
+                <button id="add-todo" class="add-btn" title="Thêm việc mới">
+                    <i class="fa-solid fa-plus"></i>
+                </button>
+            </div>
+            <div class="tags-input-group">
+                <input type="text" id="tags-input" class="tags-input" placeholder="Nhập tags (ngăn cách bằng dấu phẩy)...">
+            </div>
+        </section>
+
+        <nav class="todo-filters">
+            <button class="filter-btn active" data-filter="all">Tất cả</button>
+            <button class="filter-btn" data-filter="today">Hôm nay</button>
+            <button class="filter-btn" data-filter="week">Tuần này</button>
+            <button class="filter-btn" data-filter="overdue">Quá hạn</button>
+            <button class="filter-btn" data-filter="pending">Đang làm</button>
+            <button class="filter-btn" data-filter="completed">Đã xong</button>
+        </nav>
+
+        <main class="todo-list-container">
+            <ul id="todo-list" class="todo-list">
+                <!-- Items will be injected here -->
+            </ul>
+        </main>
+
+        <footer class="todo-footer">
+            <div class="footer-info">
+                <span id="completion-text">Tuyệt vời! Bạn chưa có việc nào.</span>
+            </div>
+            <div class="footer-actions">
+                <button id="export-btn" class="footer-btn" title="Xuất dữ liệu">
+                    <i class="fa-solid fa-download"></i>
+                </button>
+                <button id="import-btn" class="footer-btn" title="Nhập dữ liệu">
+                    <i class="fa-solid fa-upload"></i>
+                </button>
+                <button id="clear-done" class="clear-btn">
+                    <i class="fa-solid fa-broom"></i> Dọn dẹp
+                </button>
+            </div>
+        </footer>
+        <input type="file" id="import-file" accept=".json" style="display:none;">
+    </div>
+
+    <script src="logic.js"></script>
+</body>
+</html>

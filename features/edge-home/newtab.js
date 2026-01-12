@@ -45,7 +45,6 @@ const CONFIG = {
 let state = {
     settings: {},
     shortcuts: [],
-    todos: [],
     currentEngine: 'google'
 };
 let slideshowTimer = null;
@@ -59,12 +58,23 @@ document.addEventListener('DOMContentLoaded', async () => {
     renderSearchEngineSelect(); // Gọi render trước khi init search
     initSearch();
     initShortcuts();
-    initTodo();
     initQuote();
     applySettings();
     // Wire settings button on new tab
     const settingsFab = document.getElementById('settings-fab');
-    if (settingsFab) settingsFab.addEventListener('click', openSettings);
+    if (settingsFab) {
+        settingsFab.addEventListener('click', (e) => {
+            e.stopPropagation();
+            openSettings();
+        });
+    }
+
+    const todoFab = document.getElementById('todo-fab');
+    if (todoFab) {
+        todoFab.addEventListener('click', () => {
+            chrome.tabs.create({ url: chrome.runtime.getURL('features/todo/todo.html') });
+        });
+    }
 });
 // Render select menu với icon cho từng engine
 function renderSearchEngineSelect() {
@@ -855,122 +865,6 @@ function handleReorder(sourceId, sourceType, targetId, targetType) {
 
 async function saveShortcuts() {
     await chrome.storage.sync.set({ edgeHomeShortcuts: state.shortcuts });
-}
-
-// ===== Todo =====
-function initTodo() {
-    const panel = document.getElementById('todo-panel');
-    const fab = document.getElementById('todo-fab');
-    const closeBtn = document.getElementById('close-todo');
-    const input = document.getElementById('todo-input');
-    const addBtn = document.getElementById('add-todo');
-    const clearBtn = document.getElementById('clear-done');
-    
-    fab.addEventListener('click', () => panel.classList.add('open'));
-    closeBtn.addEventListener('click', () => panel.classList.remove('open'));
-    
-    const addTodo = () => {
-        const text = input.value.trim();
-        if (text) {
-            state.todos.push({ text, done: false });
-            saveTodos();
-            renderTodos();
-            input.value = '';
-        }
-    };
-    
-    addBtn.addEventListener('click', addTodo);
-    input.addEventListener('keypress', (e) => e.key === 'Enter' && addTodo());
-    
-    clearBtn.addEventListener('click', () => {
-        state.todos = state.todos.filter(t => !t.done);
-        saveTodos();
-        renderTodos();
-    });
-    
-    // Keyboard shortcuts
-    document.addEventListener('keydown', (e) => {
-        if (e.ctrlKey && e.key === 't' && !panel.classList.contains('open')) {
-            e.preventDefault();
-            fab.click();
-        }
-    });
-
-}
-function renderTodos() {
-    const list = document.getElementById('todo-list');
-    const count = document.getElementById('todo-count');
-    
-    list.innerHTML = '';
-    state.todos.forEach((todo, i) => {
-        const li = document.createElement('li');
-        li.className = `todo-item${todo.done ? ' done' : ''}`;
-        li.innerHTML = `
-            <button class="todo-checkbox" data-index="${i}" title="Đánh dấu hoàn thành"></button>
-            <span class="todo-text" data-index="${i}" contenteditable="false" title="Double-click để chỉnh sửa">${todo.text}</span>
-            <button class="todo-delete" data-index="${i}" title="Xóa"><i class="fa-solid fa-trash"></i></button>
-        `;
-        list.appendChild(li);
-    });
-    
-    count.textContent = `${state.todos.filter(t => !t.done).length} việc`;
-    
-    // Sự kiện
-    list.querySelectorAll('.todo-checkbox').forEach(btn => {
-        btn.addEventListener('click', () => {
-            const i = parseInt(btn.dataset.index);
-            state.todos[i].done = !state.todos[i].done;
-            saveTodos();
-            renderTodos();
-        });
-    });
-    
-    list.querySelectorAll('.todo-text').forEach(span => {
-        span.addEventListener('dblclick', () => {
-            span.contentEditable = 'true';
-            span.focus();
-            // Select all text
-            const range = document.createRange();
-            range.selectNodeContents(span);
-            const selection = window.getSelection();
-            selection.removeAllRanges();
-            selection.addRange(range);
-        });
-        
-        span.addEventListener('blur', () => {
-            span.contentEditable = 'false';
-            const i = parseInt(span.dataset.index);
-            const newText = span.textContent.trim();
-            if (newText && newText !== state.todos[i].text) {
-                state.todos[i].text = newText;
-                saveTodos();
-            } else if (!newText) {
-                // If empty, delete
-                state.todos.splice(i, 1);
-                saveTodos();
-                renderTodos();
-            }
-        });
-        
-        span.addEventListener('keypress', (e) => {
-            if (e.key === 'Enter') {
-                e.preventDefault();
-                span.blur();
-            }
-        });
-    });
-    
-    list.querySelectorAll('.todo-delete').forEach(btn => {
-        btn.addEventListener('click', () => {
-            state.todos.splice(parseInt(btn.dataset.index), 1);
-            saveTodos();
-            renderTodos();
-        });
-    });
-}
-
-async function saveTodos() {
-    await chrome.storage.sync.set({ edgeHomeTodos: state.todos });
 }
 
 // ===== Quote =====
