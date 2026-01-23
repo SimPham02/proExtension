@@ -164,22 +164,14 @@ async function sendToGemini(text, prompt) {
   await chrome.scripting.executeScript({
     target: { tabId: geminiTab.id },
     func: (inputText) => {
-      // Log all possible input elements for debugging
-      const allInputs = document.querySelectorAll('textarea, input, [contenteditable="true"], [role="textbox"]');
-      console.log('All possible input elements:', allInputs);
-
-      // Try multiple selectors for input
       let inputElement = document.querySelector('textarea[aria-label*="Ask"], textarea[placeholder*="Ask"], input[aria-label*="Ask"], input[placeholder*="Ask"], [contenteditable="true"], [role="textbox"]');
       if (!inputElement) {
-        // Fallback: look for any textarea or input
         inputElement = document.querySelector('textarea') || document.querySelector('input[type="text"]') || document.querySelector('[contenteditable]');
       }
       if (!inputElement) {
-        throw new Error('Could not find input field on Gemini page. Check console for available elements.');
+        throw new Error('Could not find input field on Gemini page.');
       }
-      console.log('Selected input element:', inputElement);
 
-      // Set the value
       if (inputElement.tagName.toLowerCase() === 'input' || inputElement.tagName.toLowerCase() === 'textarea') {
         inputElement.value = inputText;
         inputElement.dispatchEvent(new Event('input', { bubbles: true }));
@@ -189,18 +181,9 @@ async function sendToGemini(text, prompt) {
       }
       inputElement.focus();
 
-      // Try to send with Enter
-      inputElement.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter', bubbles: true }));
-
-      // Log all possible send buttons
-      const allButtons = document.querySelectorAll('button');
-      console.log('All buttons:', allButtons);
-
-      // If Enter doesn't work, try clicking send button
       setTimeout(() => {
         let sendButton = document.querySelector('button[aria-label*="Send"], button[data-testid*="send"], button[type="submit"], button[aria-label*="Submit"]');
         if (!sendButton) {
-          // Fallback: look for button with send-like text
           sendButton = Array.from(document.querySelectorAll('button')).find(btn => 
             btn.textContent.toLowerCase().includes('send') || 
             btn.textContent.toLowerCase().includes('submit') || 
@@ -211,9 +194,11 @@ async function sendToGemini(text, prompt) {
           console.log('Clicking send button:', sendButton);
           sendButton.click();
         } else {
-          console.log('No send button found');
+          console.log('No send button found, trying Enter');
+          inputElement.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter', bubbles: true }));
+          inputElement.dispatchEvent(new KeyboardEvent('keyup', { key: 'Enter', bubbles: true }));
         }
-      }, 100);
+      }, 500);
     },
     args: [fullText]
   });
@@ -261,7 +246,7 @@ export async function initUI() {
     const processedText = preprocessText(text);
 
     const prompt = promptInput.value.trim();
-    resultDiv.textContent = 'Sending to Gemini...';
+    resultDiv.textContent = 'Processing with Gemini...';
 
     try {
       await sendToGemini(processedText, prompt);
