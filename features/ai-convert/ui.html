@@ -1,0 +1,20 @@
+<link rel="stylesheet" href="features/ai-convert/style.css">
+<div class="ai-convert-root">
+  <div class="ai-convert-header">AI Convert - Select Element & Send to Gemini</div>
+
+  <div class="ai-convert-section">
+    <label for="prompt-input">Prompt (optional, e.g., 'Translate to Vietnamese'):</label>
+    <textarea id="prompt-input" placeholder="Enter prompt for Gemini, or leave blank"></textarea>
+  </div>
+
+  <div class="ai-convert-section">
+    <button id="select-element-btn">Select Element (like F12)</button>
+    <span id="selected-element-info">No element selected</span>
+  </div>
+
+  <div class="ai-convert-section">
+    <button id="send-to-gemini-btn">Send to Gemini Tab</button>
+  </div>
+
+  <div id="result" class="ai-convert-result"></div>
+</div>

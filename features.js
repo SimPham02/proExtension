@@ -54,5 +54,12 @@ export const FEATURES = [
     icon: 'fa-solid fa-file-shield',
     ui: 'features/studocu/ui.html',
     logic: async () => (await import('./features/studocu/logic.js'))
+  },
+  {
+    key: 'ai-convert',
+    name: 'AI Convert Stories',
+    icon: 'fa-solid fa-robot',
+    ui: 'features/ai-convert/ui.html',
+    logic: async () => (await import('./features/ai-convert/logic.js'))
   }
 ];
