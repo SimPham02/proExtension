@@ -3,11 +3,17 @@
     <label for="yayInput">Nhập đoạn văn bản:</label>
     <textarea id="yayInput" rows="3" style="width:100%; background: var(--bg-color); border: 1px solid var(--border-color); border-radius: 6px; padding: 0.6rem; color: var(--text-primary); margin-bottom: 1rem; outline: none;"></textarea>
     
-    <button id="yayRenderBtn">Chuyển đổi kiểu chữ</button>
+    <div style="display:flex; gap:10px; margin-bottom:1rem;">
+        <button id="yayRenderBtn" style="flex:1;">Chuyển đổi kiểu chữ</button>
+        <button id="yayImageBtn" style="flex:1;">Tạo hình ảnh</button>
+    </div>
     
     <div id="yayResult" class="output-box" style="margin-top:18px; min-height:32px; display:none; font-size: 1.1rem;"></div>
     
     <button id="yayCopyBtn" style="display:none; margin-top:10px; background: var(--hover-bg); color: var(--text-primary); border: 1px solid var(--border-color);">
         <i class="fa-solid fa-copy"></i> Copy kết quả
+    </button>
+    <button id="yayCopyImageBtn" style="display:none; margin-top:10px; background: var(--hover-bg); color: var(--text-primary); border: 1px solid var(--border-color);">
+        <i class="fa-solid fa-copy"></i> Copy hình ảnh
     </button>
 </div>
