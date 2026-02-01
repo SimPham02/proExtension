@@ -206,15 +206,57 @@ async function sendToGemini(text, prompt) {
 
 export async function initUI() {
   const promptInput = document.getElementById('prompt-input');
+  const savedPromptsSelect = document.getElementById('saved-prompts');
+  const savePromptBtn = document.getElementById('save-prompt-btn');
   const selectElementBtn = document.getElementById('select-element-btn');
   const selectedElementInfo = document.getElementById('selected-element-info');
   const sendToGeminiBtn = document.getElementById('send-to-gemini-btn');
   const resultDiv = document.getElementById('result');
 
+  // Load saved prompts
+  let savedPrompts = [];
+  const storedPrompts = await chrome.storage.local.get(['savedPrompts']);
+  savedPrompts = storedPrompts.savedPrompts || [];
+  updateSavedPromptsSelect();
+
+  function updateSavedPromptsSelect() {
+    savedPromptsSelect.innerHTML = '<option value="">Select a saved prompt...</option>';
+    savedPrompts.forEach(prompt => {
+      const option = document.createElement('option');
+      option.value = prompt;
+      option.textContent = prompt.length > 50 ? prompt.substring(0, 50) + '...' : prompt;
+      savedPromptsSelect.appendChild(option);
+    });
+  }
+
   // Load saved xpath
   const stored = await chrome.storage.local.get(['selectedElementXPath']);
   selectedElementXPath = stored.selectedElementXPath || null;
   selectedElementInfo.textContent = selectedElementXPath ? 'Element selected' : 'No element selected';
+
+  savedPromptsSelect.addEventListener('change', () => {
+    const selectedPrompt = savedPromptsSelect.value;
+    if (selectedPrompt) {
+      promptInput.value = selectedPrompt;
+    }
+  });
+
+  savePromptBtn.addEventListener('click', async () => {
+    const prompt = promptInput.value.trim();
+    if (prompt && !savedPrompts.includes(prompt)) {
+      savedPrompts.push(prompt);
+      await chrome.storage.local.set({ savedPrompts });
+      updateSavedPromptsSelect();
+      resultDiv.textContent = 'Prompt saved!';
+      setTimeout(() => resultDiv.textContent = '', 2000);
+    } else if (savedPrompts.includes(prompt)) {
+      resultDiv.textContent = 'Prompt already saved.';
+      setTimeout(() => resultDiv.textContent = '', 2000);
+    } else {
+      resultDiv.textContent = 'No prompt to save.';
+      setTimeout(() => resultDiv.textContent = '', 2000);
+    }
+  });
 
   selectElementBtn.addEventListener('click', async () => {
     const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
