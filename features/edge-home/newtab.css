@@ -75,7 +75,22 @@ body {
     background-size: cover;
     background-position: center;
     background-attachment: fixed;
+    background-origin: border-box;
+    background-blend-mode: normal;
     transition: background-color 0.8s ease-in-out, background-image 0.8s ease-in-out;
+    
+    /* Optimize image rendering quality */
+    image-rendering: -webkit-optimize-contrast;
+    image-rendering: high-quality;
+    -webkit-backface-visibility: hidden;
+    backface-visibility: hidden;
+    -webkit-perspective: 1000;
+    perspective: 1000;
+    will-change: background-image;
+    
+    /* Ensure sharp rendering */
+    -ms-interpolation-mode: nearest-neighbor;
+    image-orientation: from-image;
 }
 
 ::selection {

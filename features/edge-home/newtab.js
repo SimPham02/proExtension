@@ -244,18 +244,29 @@ function setPageBackground(value, type) {
         if (imgUrl.startsWith('http') || imgUrl.startsWith('data:')) {
             const img = new Image();
             img.onload = () => {
+                // Apply background with optimal settings
                 document.body.style.backgroundImage = value;
                 document.body.style.backgroundColor = 'var(--bg-primary)';
+                document.body.style.backgroundSize = 'cover';
+                document.body.style.backgroundPosition = 'center center';
+                document.body.style.backgroundRepeat = 'no-repeat';
+                document.body.style.backgroundAttachment = 'fixed';
+                // Use lighten blend mode to enhance image visibility without affecting text
+                document.body.style.backgroundBlendMode = 'lighten';
             };
             img.src = imgUrl;
         } else {
             document.body.style.backgroundImage = value;
             document.body.style.backgroundColor = 'var(--bg-primary)';
+            document.body.style.backgroundSize = 'cover';
+            document.body.style.backgroundPosition = 'center center';
+            document.body.style.backgroundBlendMode = 'lighten';
         }
     } else if (type === 'solid') {
         if (document.body.style.backgroundColor === value && (document.body.style.backgroundImage === 'none' || !document.body.style.backgroundImage)) return;
         document.body.style.backgroundColor = value;
         document.body.style.backgroundImage = 'none';
+        document.body.style.backgroundBlendMode = 'normal';
     } else {
         const currentBg = document.body.style.backgroundImage.replace(/\s+/g, '');
         const targetBg = value.replace(/\s+/g, '');
@@ -264,6 +275,7 @@ function setPageBackground(value, type) {
         document.body.style.backgroundImage = value;
         // For gradients, keep the theme background color underneath to support transparency
         document.body.style.backgroundColor = 'var(--bg-primary)';
+        document.body.style.backgroundBlendMode = 'normal';
     }
 }
 
