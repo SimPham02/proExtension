@@ -136,18 +136,36 @@
                     </div>
 
                     <div class="bg-options-panel" id="bg-panel-image">
-                        <div class="input-group">
-                            <label>Tải lên từ máy</label>
-                            <input type="file" id="bg-image-upload" accept="image/*">
-                            <p class="input-hint">Chọn hình ảnh từ máy tính của bạn (Max 2MB)</p>
+                        <!-- Add Image Section -->
+                        <div class="image-add-section">
+                            <div class="input-group">
+                                <label>Thêm từ URL</label>
+                                <div class="image-url-input-wrapper">
+                                    <input type="text" id="bg-image-url" placeholder="https://example.com/image.jpg">
+                                    <button type="button" class="btn-secondary" id="add-image-url-btn">Thêm</button>
+                                </div>
+                                <p class="input-hint">Dán đường dẫn hình ảnh từ internet</p>
+                            </div>
+                            <div class="input-group">
+                                <label>Hoặc tải lên từ máy</label>
+                                <label class="btn-secondary" style="display: inline-flex; align-items: center; justify-content: center; cursor: pointer;">
+                                    <i class="fa-solid fa-upload" style="margin-right: 8px;"></i> Tải ảnh
+                                    <input type="file" id="bg-image-upload" accept="image/*" style="display: none;">
+                                </label>
+                                <p class="input-hint">Chọn hình ảnh từ máy tính (Max 2MB)</p>
+                            </div>
                         </div>
-                        <div class="input-group">
-                            <label>Hoặc URL Hình ảnh</label>
-                            <input type="text" id="bg-image-url" placeholder="https://example.com/image.jpg">
-                            <p class="input-hint">Dán đường dẫn hình ảnh từ internet</p>
-                        </div>
-                        <div class="image-preview" id="bg-image-preview">
-                            <span>Xem trước</span>
+
+                        <!-- Image Gallery -->
+                        <div class="image-gallery-section">
+                            <div class="gallery-header">
+                                <h3>Thư viện hình ảnh</h3>
+                                <span class="gallery-count" id="gallery-count">0 ảnh</span>
+                            </div>
+                            <div class="image-gallery" id="image-gallery">
+                                <!-- Images will be rendered here -->
+                            </div>
+                            <p class="input-hint" id="empty-gallery-hint" style="text-align: center;">Chưa có ảnh. Thêm ảnh để bắt đầu.</p>
                         </div>
                     </div>
 
@@ -163,18 +181,47 @@
                             <input type="number" id="slideshow-interval" value="30" min="5">
                             <p class="input-hint">Nhập 0 để tắt tự động chuyển cảnh</p>
                         </div>
-                        <div class="input-group">
-                            <label>Danh sách hình nền (URL hoặc Gradient)</label>
-                            <textarea id="slideshow-list" placeholder="Mỗi dòng một URL hình nền hoặc mã Gradient" rows="5"></textarea>
-                            <p class="input-hint">Dán các liên kết ảnh hoặc gradient, mỗi cái trên một dòng.</p>
+
+                        <!-- Add to Slideshow Section -->
+                        <div class="slideshow-add-section">
+                            <div class="input-group">
+                                <label>Thêm từ URL</label>
+                                <div class="image-url-input-wrapper">
+                                    <input type="text" id="slideshow-url" placeholder="https://example.com/image.jpg hoặc linear-gradient(...)">
+                                    <button type="button" class="btn-secondary" id="add-slideshow-url-btn">Thêm</button>
+                                </div>
+                                <p class="input-hint">Dán URL ảnh hoặc mã Gradient</p>
+                            </div>
+                            <div class="input-group">
+                                <label>Hoặc tải lên ảnh</label>
+                                <label class="btn-secondary" style="display: inline-flex; align-items: center; justify-content: center; cursor: pointer;">
+                                    <i class="fa-solid fa-upload" style="margin-right: 8px;"></i> Tải ảnh
+                                    <input type="file" id="slideshow-image-upload" accept="image/*" multiple style="display: none;">
+                                </label>
+                                <p class="input-hint">Chọn multiple ảnh từ máy (Max 2MB mỗi file)</p>
+                            </div>
+                            <div class="input-group">
+                                <button type="button" class="btn-secondary" id="add-current-to-slideshow" style="width: 100%;">
+                                    <i class="fa-solid fa-plus" style="margin-right: 8px;"></i> Thêm background hiện tại
+                                </button>
+                            </div>
                         </div>
-                        <div class="slideshow-controls">
-                            <button type="button" class="btn-secondary" id="add-current-to-slideshow">Thêm hình nền hiện tại</button>
-                            <label class="btn-secondary" style="display: inline-flex; align-items: center; justify-content: center; cursor: pointer;">
-                                <i class="fa-solid fa-upload" style="margin-right: 8px;"></i> Tải lên ảnh
-                                <input type="file" id="slideshow-image-upload" accept="image/*" multiple style="display: none;">
-                            </label>
-                            <button type="button" class="btn-secondary" id="clear-slideshow-list" style="color: #ff3b30; border-color: rgba(255, 59, 48, 0.2);">Xóa tất cả</button>
+
+                        <!-- Slideshow Gallery -->
+                        <div class="slideshow-gallery-section">
+                            <div class="gallery-header">
+                                <h3>Danh sách trình chiếu</h3>
+                                <span class="gallery-count" id="slideshow-count">0 item</span>
+                            </div>
+                            <div class="slideshow-gallery" id="slideshow-gallery">
+                                <!-- Slideshow items will be rendered here -->
+                            </div>
+                            <p class="input-hint" id="empty-slideshow-hint" style="text-align: center;">Chưa có item. Thêm ảnh hoặc gradient để bắt đầu.</p>
+                            <div class="slideshow-controls" style="margin-top: 12px;">
+                                <button type="button" class="btn-secondary" id="clear-slideshow-list" style="color: #ff3b30; border-color: rgba(255, 59, 48, 0.2); width: 100%;">
+                                    <i class="fa-solid fa-trash" style="margin-right: 8px;"></i> Xóa tất cả
+                                </button>
+                            </div>
                         </div>
                     </div>
                 </div>

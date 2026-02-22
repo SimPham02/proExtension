@@ -944,6 +944,12 @@ async function openSettings() {
         // Populate inputs from current settings
         populateSettingsInputs(container);
 
+        // Initialize image gallery after settings are populated
+        await initImageGallery(container);
+
+        // Initialize slideshow gallery after settings are populated
+        await initSlideshowGallery(container);
+
         // Helper to close and cleanup
         function closeSettings() {
             modal.classList.remove('open');
@@ -954,7 +960,7 @@ async function openSettings() {
     }
 }
 
-function initBackgroundSettings(root) {
+async function initBackgroundSettings(root) {
     const bgTypeBtns = root.querySelectorAll('.bg-type-btn');
     const bgPanels = root.querySelectorAll('.bg-options-panel');
     
@@ -1005,135 +1011,13 @@ function initBackgroundSettings(root) {
         solidGrid.appendChild(el);
     });
 
-    // Image Input (URL)
-    const imgInput = root.querySelector('#bg-image-url');
-    const imgPreview = root.querySelector('#bg-image-preview');
-    imgInput.addEventListener('input', () => {
-        const url = imgInput.value.trim();
-        if (url) {
-            imgPreview.style.backgroundImage = `url('${url}')`;
-            imgPreview.textContent = '';
-            // Auto-select image type if typing
-            root.dataset.selectedBgType = 'image';
-            root.dataset.selectedBgValue = `url('${url}')`;
-        }
-    });
+    // ===== Image Gallery Management =====
+    // Will be called after populateSettingsInputs in openSettings()
 
-    // Image Input (File Upload)
-    const fileInput = root.querySelector('#bg-image-upload');
-    fileInput.addEventListener('change', (e) => {
-        const file = e.target.files[0];
-        if (!file) return;
 
-        if (file.size > 2 * 1024 * 1024) {
-            alert('File quá lớn! Vui lòng chọn ảnh dưới 2MB.');
-            fileInput.value = '';
-            return;
-        }
+    // ===== Slideshow Gallery Management =====
+    // Will be called after populateSettingsInputs in openSettings()
 
-        const reader = new FileReader();
-        reader.onload = (event) => {
-            const result = event.target.result;
-            imgPreview.style.backgroundImage = `url('${result}')`;
-            imgPreview.textContent = '';
-            
-            // Auto-select image type
-            root.dataset.selectedBgType = 'image';
-            root.dataset.selectedBgValue = `url('${result}')`;
-            
-            // Clear URL input to avoid confusion
-            imgInput.value = '';
-            
-            // Switch to image tab if not active (though input is inside it)
-            const imgTabBtn = root.querySelector('.bg-type-btn[data-bg-type="image"]');
-            if (imgTabBtn) imgTabBtn.click();
-        };
-        reader.readAsDataURL(file);
-    });
-
-    // Slideshow: Add current background to list
-    const addCurrentBtn = root.querySelector('#add-current-to-slideshow');
-    const slideshowList = root.querySelector('#slideshow-list');
-    if (addCurrentBtn && slideshowList) {
-        addCurrentBtn.addEventListener('click', () => {
-            let currentVal = root.dataset.selectedBgValue || state.settings.bgValue;
-            
-            // If image/gradient type is active but not "selected" via click (e.g. manually typed URL)
-            const activeTab = root.querySelector('.bg-type-btn.active');
-            if (activeTab) {
-                const type = activeTab.dataset.bgType;
-                if (type === 'image') {
-                    const urlInput = root.querySelector('#bg-image-url').value.trim();
-                    if (urlInput) currentVal = `url('${urlInput}')`;
-                }
-            }
-
-            if (!currentVal) {
-                // Last fallback: default gradient
-                currentVal = 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)';
-            }
-
-            // Normalizing value for comparison
-            const normalizedVal = currentVal.trim();
-            const currentContent = slideshowList.value.trim();
-            const lines = currentContent ? currentContent.split('\n').map(l => l.trim()) : [];
-            
-            if (!lines.includes(normalizedVal)) {
-                lines.push(normalizedVal);
-                slideshowList.value = lines.join('\n');
-            }
-        });
-    }
-
-    // Slideshow: Multiple image upload
-    const slideshowUpload = root.querySelector('#slideshow-image-upload');
-    if (slideshowUpload && slideshowList) {
-        slideshowUpload.addEventListener('change', async (e) => {
-            const files = Array.from(e.target.files);
-            if (!files.length) return;
-
-            const currentContent = slideshowList.value.trim();
-            const lines = currentContent ? currentContent.split('\n').map(l => l.trim()) : [];
-            let addedCount = 0;
-
-            for (const file of files) {
-                if (file.size > 2 * 1024 * 1024) {
-                    console.warn(`File ${file.name} too large`);
-                    continue;
-                }
-
-                try {
-                    const dataUrl = await new Promise((resolve, reject) => {
-                        const reader = new FileReader();
-                        reader.onload = (ev) => resolve(ev.target.result);
-                        reader.onerror = reject;
-                        reader.readAsDataURL(file);
-                    });
-
-                    const val = `url('${dataUrl}')`;
-                    if (!lines.includes(val)) {
-                        lines.push(val);
-                        addedCount++;
-                    }
-                } catch (err) {
-                    console.error('Error reading file:', err);
-                }
-            }
-
-            slideshowList.value = lines.join('\n');
-            slideshowUpload.value = ''; // Reset
-            if (addedCount > 0) {
-                // Optional: show a small toast or just update UI
-            }
-        });
-    }
-
-    // Slideshow: Clear All
-    root.querySelector('#clear-slideshow-list')?.addEventListener('click', () => {
-        if (confirm('Xóa toàn bộ danh sách hình nền trong trình chiếu?')) {
-            slideshowList.value = '';
-        }
-    });
 }
 
 function selectBackground(root, type, value, element) {
@@ -1156,15 +1040,8 @@ function collectSettingsFrom(root) {
     let bgType = root.dataset.selectedBgType;
     let bgValue = root.dataset.selectedBgValue;
     
-    // If image tab is active, prefer input value
     const activeTab = root.querySelector('.bg-type-btn.active');
-    if (activeTab && activeTab.dataset.bgType === 'image') {
-        const url = root.querySelector('#bg-image-url').value.trim();
-        if (url) {
-            bgType = 'image';
-            bgValue = `url('${url}')`;
-        }
-    } else if (activeTab && activeTab.dataset.bgType === 'slideshow') {
+    if (activeTab && activeTab.dataset.bgType === 'slideshow') {
         bgType = 'slideshow';
     }
 
@@ -1179,7 +1056,7 @@ function collectSettingsFrom(root) {
         bgType: bgType || state.settings.bgType || 'gradient',
         bgValue: bgValue || state.settings.bgValue,
         bgSlideshowInterval: parseInt(root.querySelector('#slideshow-interval')?.value || '30', 10),
-        bgSlideshowList: (root.querySelector('#slideshow-list')?.value || '').split('\n').map(s => s.trim()).filter(s => s),
+        bgSlideshowList: root.slideshowList || state.settings.bgSlideshowList || [],
         bgSlideshowOnNewTab: getChecked('slideshow-on-newtab', false)
     };
 }
@@ -1198,7 +1075,8 @@ function populateSettingsInputs(root) {
     // Populate Slideshow settings
     setChecked('slideshow-on-newtab', s.bgSlideshowOnNewTab ?? false);
     if (root.querySelector('#slideshow-interval')) root.querySelector('#slideshow-interval').value = s.bgSlideshowInterval || 30;
-    if (root.querySelector('#slideshow-list')) root.querySelector('#slideshow-list').value = (s.bgSlideshowList || []).join('\n');
+    root.slideshowList = s.bgSlideshowList || [];
+
 
     // Populate Background
     if (s.bgType) {
@@ -1206,17 +1084,9 @@ function populateSettingsInputs(root) {
         if (typeBtn) typeBtn.click();
         
         if (s.bgType === 'image' && s.bgValue) {
-            // Extract URL from url('...')
-            const match = s.bgValue.match(/url\(['"]?(.*?)['"]?\)/);
-            if (match) {
-                const url = match[1];
-                // Only set URL input if it's not a data URI (too long)
-                if (!url.startsWith('data:')) {
-                    root.querySelector('#bg-image-url').value = url;
-                }
-                root.querySelector('#bg-image-preview').style.backgroundImage = s.bgValue;
-                root.querySelector('#bg-image-preview').textContent = '';
-            }
+            // Set dataset for image selection (gallery will show as active)
+            root.dataset.selectedBgType = s.bgType;
+            root.dataset.selectedBgValue = s.bgValue;
         } else if (s.bgValue) {
             // Highlight swatch by comparing raw data-bg-value (for both solid and gradient)
             const swatches = root.querySelectorAll('.color-swatch');
@@ -1231,6 +1101,377 @@ function populateSettingsInputs(root) {
         root.dataset.selectedBgType = s.bgType;
         root.dataset.selectedBgValue = s.bgValue;
     }
+}
+
+// ===== Image Gallery Functions =====
+async function initImageGallery(root) {
+    // Load custom images from storage
+    const customImages = await getCustomImages();
+    
+    const urlInput = root.querySelector('#bg-image-url');
+    const addUrlBtn = root.querySelector('#add-image-url-btn');
+    const fileInput = root.querySelector('#bg-image-upload');
+    const gallery = root.querySelector('#image-gallery');
+    const galleryCount = root.querySelector('#gallery-count');
+    const emptyHint = root.querySelector('#empty-gallery-hint');
+    
+    // Render gallery
+    const renderGallery = () => {
+        gallery.innerHTML = '';
+        customImages.forEach((img, idx) => {
+            const item = document.createElement('div');
+            item.className = 'gallery-item';
+            
+            const isActive = root.dataset.selectedBgValue === `url('${img}')`;
+            if (isActive) item.classList.add('active');
+            
+            const imgEl = document.createElement('img');
+            imgEl.src = img;
+            imgEl.alt = `Image ${idx + 1}`;
+            imgEl.onerror = () => { imgEl.src = ''; };
+            
+            const actions = document.createElement('div');
+            actions.className = 'gallery-item-actions';
+            
+            const selectBtn = document.createElement('button');
+            selectBtn.className = 'gallery-action-btn';
+            selectBtn.innerHTML = '<i class="fa-solid fa-check"></i>';
+            selectBtn.title = 'Chọn làm background';
+            selectBtn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                root.dataset.selectedBgType = 'image';
+                root.dataset.selectedBgValue = `url('${img}')`;
+                renderGallery();
+                showStatus(root, 'Đã chọn hình ảnh');
+            });
+            
+            const deleteBtn = document.createElement('button');
+            deleteBtn.className = 'gallery-action-btn delete';
+            deleteBtn.innerHTML = '<i class="fa-solid fa-trash"></i>';
+            deleteBtn.title = 'Xóa ảnh';
+            deleteBtn.addEventListener('click', async (e) => {
+                e.stopPropagation();
+                if (confirm('Bạn chắc chắn muốn xóa ảnh này?')) {
+                    customImages.splice(idx, 1);
+                    await saveCustomImages(customImages);
+                    renderGallery();
+                    showStatus(root, 'Đã xóa ảnh');
+                }
+            });
+            
+            actions.appendChild(selectBtn);
+            actions.appendChild(deleteBtn);
+            item.appendChild(imgEl);
+            item.appendChild(actions);
+            gallery.appendChild(item);
+        });
+        
+        galleryCount.textContent = `${customImages.length} ${customImages.length === 1 ? 'ảnh' : 'ảnh'}`;
+        emptyHint.style.display = customImages.length === 0 ? 'block' : 'none';
+    };
+    
+    // Add URL button
+    addUrlBtn?.addEventListener('click', async () => {
+        const url = urlInput.value.trim();
+        if (!url) {
+            showStatus(root, 'Vui lòng nhập URL hình ảnh');
+            return;
+        }
+        
+        if (!url.startsWith('http://') && !url.startsWith('https://')) {
+            showStatus(root, 'URL phải bắt đầu bằng http:// hoặc https://');
+            return;
+        }
+        
+        // Check if already exists
+        if (customImages.includes(url)) {
+            showStatus(root, 'Hình ảnh này đã được thêm');
+            return;
+        }
+        
+        // Verify image can be loaded
+        try {
+            await new Promise((resolve, reject) => {
+                const img = new Image();
+                img.crossOrigin = 'anonymous';
+                img.onload = resolve;
+                img.onerror = reject;
+                img.src = url;
+            });
+            
+            customImages.push(url);
+            await saveCustomImages(customImages);
+            urlInput.value = '';
+            renderGallery();
+            showStatus(root, 'Đã thêm ảnh mới');
+        } catch (e) {
+            showStatus(root, 'Không thể tải ảnh. Kiểm tra URL');
+        }
+    });
+    
+    // File upload
+    fileInput?.addEventListener('change', async (e) => {
+        const files = Array.from(e.target.files);
+        if (!files.length) return;
+        
+        let addedCount = 0;
+        
+        for (const file of files) {
+            if (file.size > 2 * 1024 * 1024) {
+                console.warn(`File ${file.name} quá lớn`);
+                continue;
+            }
+            
+            try {
+                const dataUrl = await new Promise((resolve, reject) => {
+                    const reader = new FileReader();
+                    reader.onload = (ev) => resolve(ev.target.result);
+                    reader.onerror = reject;
+                    reader.readAsDataURL(file);
+                });
+                
+                if (!customImages.includes(dataUrl)) {
+                    customImages.push(dataUrl);
+                    addedCount++;
+                }
+            } catch (err) {
+                console.error('Error reading file:', err);
+            }
+        }
+        
+        if (addedCount > 0) {
+            await saveCustomImages(customImages);
+            fileInput.value = '';
+            renderGallery();
+            showStatus(root, `Đã thêm ${addedCount} ảnh`);
+        }
+    });
+    
+    // Initial render
+    renderGallery();
+}
+
+// ===== Slideshow Gallery Functions =====
+async function initSlideshowGallery(root) {
+    // Load slideshow items
+    if (!root.slideshowList) root.slideshowList = [];
+    
+    const urlInput = root.querySelector('#slideshow-url');
+    const addUrlBtn = root.querySelector('#add-slideshow-url-btn');
+    const fileInput = root.querySelector('#slideshow-image-upload');
+    const addCurrentBtn = root.querySelector('#add-current-to-slideshow');
+    const gallery = root.querySelector('#slideshow-gallery');
+    const galleryCount = root.querySelector('#slideshow-count');
+    const emptyHint = root.querySelector('#empty-slideshow-hint');
+    const clearBtn = root.querySelector('#clear-slideshow-list');
+    
+    // Render gallery
+    const renderGallery = () => {
+        gallery.innerHTML = '';
+        root.slideshowList.forEach((item, idx) => {
+            const itemEl = document.createElement('div');
+            itemEl.className = 'slideshow-item';
+            
+            // Detect type: image or gradient
+            const isGradient = item.startsWith('linear-gradient') || item.startsWith('radial-gradient');
+            const isUrl = item.startsWith('url(');
+            
+            if (isGradient) {
+                const gradEl = document.createElement('div');
+                gradEl.className = 'slideshow-item-gradient';
+                gradEl.style.background = item;
+                gradEl.title = 'Gradient';
+                itemEl.appendChild(gradEl);
+            } else if (isUrl) {
+                const imgEl = document.createElement('img');
+                const urlMatch = item.match(/url\(['"]?(.*?)['"]?\)/);
+                if (urlMatch) {
+                    imgEl.src = urlMatch[1];
+                    imgEl.alt = `Item ${idx + 1}`;
+                    imgEl.onerror = () => { imgEl.alt = 'Lỗi'; };
+                }
+                itemEl.appendChild(imgEl);
+            } else {
+                // Try as URL directly
+                const imgEl = document.createElement('img');
+                imgEl.src = item;
+                imgEl.alt = `Item ${idx + 1}`;
+                imgEl.onerror = () => { imgEl.alt = 'Lỗi'; };
+                itemEl.appendChild(imgEl);
+            }
+            
+            const actions = document.createElement('div');
+            actions.className = 'slideshow-item-actions';
+            
+            if (idx > 0) {
+                const upBtn = document.createElement('button');
+                upBtn.className = 'slideshow-action-btn move-up';
+                upBtn.innerHTML = '<i class="fa-solid fa-arrow-up"></i>';
+                upBtn.title = 'Lên trên';
+                upBtn.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    const temp = root.slideshowList[idx];
+                    root.slideshowList[idx] = root.slideshowList[idx - 1];
+                    root.slideshowList[idx - 1] = temp;
+                    renderGallery();
+                });
+                actions.appendChild(upBtn);
+            }
+            
+            if (idx < root.slideshowList.length - 1) {
+                const downBtn = document.createElement('button');
+                downBtn.className = 'slideshow-action-btn move-down';
+                downBtn.innerHTML = '<i class="fa-solid fa-arrow-down"></i>';
+                downBtn.title = 'Xuống dưới';
+                downBtn.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    const temp = root.slideshowList[idx];
+                    root.slideshowList[idx] = root.slideshowList[idx + 1];
+                    root.slideshowList[idx + 1] = temp;
+                    renderGallery();
+                });
+                actions.appendChild(downBtn);
+            }
+            
+            const deleteBtn = document.createElement('button');
+            deleteBtn.className = 'slideshow-action-btn delete';
+            deleteBtn.innerHTML = '<i class="fa-solid fa-trash"></i>';
+            deleteBtn.title = 'Xóa';
+            deleteBtn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                if (confirm('Xóa item này khỏi trình chiếu?')) {
+                    root.slideshowList.splice(idx, 1);
+                    renderGallery();
+                    showStatus(root, 'Đã xóa item');
+                }
+            });
+            actions.appendChild(deleteBtn);
+            
+            itemEl.appendChild(actions);
+            gallery.appendChild(itemEl);
+        });
+        
+        galleryCount.textContent = `${root.slideshowList.length} ${root.slideshowList.length === 1 ? 'item' : 'item'}`;
+        emptyHint.style.display = root.slideshowList.length === 0 ? 'block' : 'none';
+    };
+    
+    // Add URL button
+    addUrlBtn?.addEventListener('click', async () => {
+        const input = urlInput.value.trim();
+        if (!input) {
+            showStatus(root, 'Vui lòng nhập URL hoặc Gradient');
+            return;
+        }
+        
+        // Check if already exists
+        if (root.slideshowList.includes(input)) {
+            showStatus(root, 'Item này đã được thêm');
+            return;
+        }
+        
+        // Validate: if URL, check if it's valid
+        if (!input.startsWith('linear-gradient') && !input.startsWith('radial-gradient')) {
+            if (!input.startsWith('http://') && !input.startsWith('https://')) {
+                showStatus(root, 'URL phải bắt đầu bằng http:// hoặc https://');
+                return;
+            }
+            
+            // Verify image can be loaded
+            try {
+                await new Promise((resolve, reject) => {
+                    const img = new Image();
+                    img.crossOrigin = 'anonymous';
+                    img.onload = resolve;
+                    img.onerror = reject;
+                    img.src = input;
+                });
+            } catch (e) {
+                showStatus(root, 'Không thể tải ảnh. Kiểm tra URL');
+                return;
+            }
+        }
+        
+        root.slideshowList.push(input);
+        urlInput.value = '';
+        renderGallery();
+        showStatus(root, 'Đã thêm vào trình chiếu');
+    });
+    
+    // File upload
+    fileInput?.addEventListener('change', async (e) => {
+        const files = Array.from(e.target.files);
+        if (!files.length) return;
+        
+        let addedCount = 0;
+        
+        for (const file of files) {
+            if (file.size > 2 * 1024 * 1024) {
+                console.warn(`File ${file.name} quá lớn`);
+                continue;
+            }
+            
+            try {
+                const dataUrl = await new Promise((resolve, reject) => {
+                    const reader = new FileReader();
+                    reader.onload = (ev) => resolve(ev.target.result);
+                    reader.onerror = reject;
+                    reader.readAsDataURL(file);
+                });
+                
+                if (!root.slideshowList.includes(dataUrl)) {
+                    root.slideshowList.push(dataUrl);
+                    addedCount++;
+                }
+            } catch (err) {
+                console.error('Error reading file:', err);
+            }
+        }
+        
+        if (addedCount > 0) {
+            fileInput.value = '';
+            renderGallery();
+            showStatus(root, `Đã thêm ${addedCount} ảnh`);
+        }
+    });
+    
+    // Add current background button
+    addCurrentBtn?.addEventListener('click', () => {
+        let currentVal = root.dataset.selectedBgValue || state.settings.bgValue;
+        
+        if (!currentVal) {
+            showStatus(root, 'Chưa có background được chọn');
+            return;
+        }
+        
+        if (!root.slideshowList.includes(currentVal)) {
+            root.slideshowList.push(currentVal);
+            renderGallery();
+            showStatus(root, 'Đã thêm background hiện tại');
+        } else {
+            showStatus(root, 'Background này đã có trong trình chiếu');
+        }
+    });
+    
+    // Clear all button
+    clearBtn?.addEventListener('click', () => {
+        if (confirm('Xóa toàn bộ danh sách trình chiếu?')) {
+            root.slideshowList = [];
+            renderGallery();
+            showStatus(root, 'Đã xóa tất cả');
+        }
+    });
+    
+    // Initial render
+    renderGallery();
+}
+
+async function getCustomImages() {
+    const result = await chrome.storage.local.get('customImages');
+    return result.customImages || [];
+}
+
+async function saveCustomImages(images) {
+    await chrome.storage.local.set({ customImages: images });
 }
 
 function showStatus(root, msg) {
