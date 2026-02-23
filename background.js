@@ -3,7 +3,7 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
     chrome.storage.local.get(['pro_translate_lang'], sendResponse);
     return true;
   }
-  
+
   if (request.type === 'clearStudocuCookies') {
     chrome.cookies.getAll({ domain: 'studocu.com' }).then(async cookies => {
       let count = 0;

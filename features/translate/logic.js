@@ -5,7 +5,7 @@ async function injectScriptIfNeeded(tabId) {
       func: () => window.__proExtTranslateInstalled === true
     });
     if (result?.result) return;
-    
+
     await chrome.scripting.executeScript({
       target: { tabId },
       files: ['features/translate/selection-listener.js']

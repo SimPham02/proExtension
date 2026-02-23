@@ -28,27 +28,8 @@ async function startElementSelection(tabId) {
 
   await chrome.scripting.executeScript({
     target: { tabId },
-    func: () => {
-      window.getXPath = function(element) {
-        if (element.id !== '') {
-          return `//*[@id="${element.id}"]`;
-        }
-        if (element === document.body) {
-          return '/html/body';
-        }
-        let ix = 0;
-        const siblings = element.parentNode.childNodes;
-        for (let i = 0; i < siblings.length; i++) {
-          const sibling = siblings[i];
-          if (sibling === element) {
-            return window.getXPath(element.parentNode) + '/' + element.tagName.toLowerCase() + '[' + (ix + 1) + ']';
-          }
-          if (sibling.nodeType === 1 && sibling.tagName === element.tagName) {
-            ix++;
-          }
-        }
-        return '';
-      };
+    func: (getXPathFunc) => {
+      window.getXPath = getXPathFunc;
 
       let overlay = document.createElement('div');
       overlay.id = 'element-selector-overlay';
@@ -84,11 +65,8 @@ async function startElementSelection(tabId) {
         if (!window.isSelecting) return;
         e.preventDefault();
         e.stopPropagation();
-        console.log('Clicked on element:', e.target);
-        currentElement = e.target.parentElement || e.target; // Select parent element to make it larger
-        console.log('Selected element:', currentElement);
+        currentElement = e.target.parentElement || e.target;
         window.selectedXPath = window.getXPath(currentElement);
-        console.log('Selected XPath:', window.selectedXPath);
         window.isSelecting = false;
         overlay.remove();
         document.removeEventListener('mouseover', mouseoverHandler);
@@ -101,17 +79,15 @@ async function startElementSelection(tabId) {
       document.addEventListener('click', clickHandler);
 
       window.isSelecting = true;
-    }
+    },
+    args: [getXPath]
   });
 
   // Wait a bit and get the selected xpath
   setTimeout(async () => {
     const [result] = await chrome.scripting.executeScript({
       target: { tabId },
-      func: () => {
-        console.log('Selected xpath:', window.selectedXPath);
-        return window.selectedXPath;
-      }
+      func: () => window.selectedXPath
     });
     selectedElementXPath = result?.result;
     document.getElementById('selected-element-info').textContent = selectedElementXPath ? 'Element selected' : 'Selection failed';
@@ -191,10 +167,8 @@ async function sendToGemini(text, prompt) {
           );
         }
         if (sendButton) {
-          console.log('Clicking send button:', sendButton);
           sendButton.click();
         } else {
-          console.log('No send button found, trying Enter');
           inputElement.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter', bubbles: true }));
           inputElement.dispatchEvent(new KeyboardEvent('keyup', { key: 'Enter', bubbles: true }));
         }
@@ -212,6 +186,12 @@ export async function initUI() {
   const selectedElementInfo = document.getElementById('selected-element-info');
   const sendToGeminiBtn = document.getElementById('send-to-gemini-btn');
   const resultDiv = document.getElementById('result');
+
+  // Helper to show temporary message
+  const showResult = (msg, duration = 2000) => {
+    resultDiv.textContent = msg;
+    if (duration > 0) setTimeout(() => resultDiv.textContent = '', duration);
+  };
 
   // Load saved prompts
   let savedPrompts = [];
@@ -236,32 +216,29 @@ export async function initUI() {
 
   savedPromptsSelect.addEventListener('change', () => {
     const selectedPrompt = savedPromptsSelect.value;
-    if (selectedPrompt) {
-      promptInput.value = selectedPrompt;
-    }
+    if (selectedPrompt) promptInput.value = selectedPrompt;
   });
 
   savePromptBtn.addEventListener('click', async () => {
     const prompt = promptInput.value.trim();
-    if (prompt && !savedPrompts.includes(prompt)) {
-      savedPrompts.push(prompt);
-      await chrome.storage.local.set({ savedPrompts });
-      updateSavedPromptsSelect();
-      resultDiv.textContent = 'Prompt saved!';
-      setTimeout(() => resultDiv.textContent = '', 2000);
-    } else if (savedPrompts.includes(prompt)) {
-      resultDiv.textContent = 'Prompt already saved.';
-      setTimeout(() => resultDiv.textContent = '', 2000);
-    } else {
-      resultDiv.textContent = 'No prompt to save.';
-      setTimeout(() => resultDiv.textContent = '', 2000);
+    if (!prompt) {
+      showResult('No prompt to save.');
+      return;
     }
+    if (savedPrompts.includes(prompt)) {
+      showResult('Prompt already saved.');
+      return;
+    }
+    savedPrompts.push(prompt);
+    await chrome.storage.local.set({ savedPrompts });
+    updateSavedPromptsSelect();
+    showResult('Prompt saved!');
   });
 
   selectElementBtn.addEventListener('click', async () => {
     const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
     if (!tab || !tab.url.startsWith('http')) {
-      resultDiv.textContent = 'No active web page';
+      showResult('No active web page');
       return;
     }
     await startElementSelection(tab.id);
@@ -269,32 +246,31 @@ export async function initUI() {
 
   sendToGeminiBtn.addEventListener('click', async () => {
     if (!selectedElementXPath) {
-      resultDiv.textContent = 'Please select an element first';
+      showResult('Please select an element first');
       return;
     }
 
     const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
     if (!tab || !tab.url.startsWith('http')) {
-      resultDiv.textContent = 'No active web page';
+      showResult('No active web page');
       return;
     }
 
     const text = await getTextFromSelectedElement(tab.id);
     if (!text) {
-      resultDiv.textContent = 'No text found in selected element';
+      showResult('No text found in selected element');
       return;
     }
 
     const processedText = preprocessText(text);
-
     const prompt = promptInput.value.trim();
-    resultDiv.textContent = 'Processing with Gemini...';
+    showResult('Processing with Gemini...', 0);
 
     try {
       await sendToGemini(processedText, prompt);
-      resultDiv.textContent = 'Sent to Gemini successfully!';
+      showResult('Sent to Gemini successfully!');
     } catch (e) {
-      resultDiv.textContent = `Error: ${e.message}`;
+      showResult(`Error: ${e.message}`);
     }
   });
 }

@@ -14,8 +14,6 @@
 
     // Initialize
     function init() {
-        console.log('Premium Todo App: Starting...');
-
         // Cache DOM elements
         DOM = {
             input: document.getElementById('todo-input'),
@@ -39,7 +37,6 @@
         };
 
         if (!DOM.input || !DOM.addBtn || !DOM.list) {
-            console.error('Critical DOM elements missing!');
             return;
         }
 
