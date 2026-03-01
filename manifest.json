@@ -13,6 +13,14 @@
   "chrome_url_overrides": {
     "newtab": "features/edge-home/newtab.html"
   },
+  "content_scripts": [
+    {
+      "matches": ["http://*/*", "https://*/*"],
+      "js": ["features/translate/selection-listener.js"],
+      "run_at": "document_end",
+      "all_frames": false
+    }
+  ],
   "permissions": ["bookmarks", "storage", "tabs", "activeTab", "scripting", "cookies"],
   "host_permissions": ["<all_urls>"]
 }

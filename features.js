@@ -61,12 +61,5 @@ export const FEATURES = [
     icon: 'fa-solid fa-robot',
     ui: 'features/ai-convert/ui.html',
     logic: async () => (await import('./features/ai-convert/logic.js'))
-  },
-  {
-    key: 'smooth-scroll',
-    name: 'Smooth Scroll',
-    icon: 'fa-solid fa-scroll',
-    ui: 'features/smooth-scroll/ui.html',
-    logic: async () => (await import('./features/smooth-scroll/logic.js'))
   }
 ];

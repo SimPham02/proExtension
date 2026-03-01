@@ -1,3 +1,7 @@
+// ─── Message handlers ─────────────────────────────────────────────────────────
+// Content scripts được khai báo trong manifest.json, tự inject vào mọi trang.
+// Background chỉ cần xử lý messages.
+
 chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
   if (request.type === 'getTranslateSettings') {
     chrome.storage.local.get(['pro_translate_lang'], sendResponse);
