@@ -49,12 +49,4 @@ export const FEATURES = [
     ui: 'src/features/translate/ui.html',
     logic: async () => (await import('../features/translate/logic.js'))
   },
-  {
-    key: 'todo',
-    name: 'Quản lý công việc',
-    icon: 'fa-solid fa-list-check',
-    ui: 'src/features/todo/ui.html',
-    style: 'src/features/todo/style.css',
-    logic: async () => (await import('../features/todo/logic.js'))
-  }
 ];
