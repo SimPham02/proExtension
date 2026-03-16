@@ -1,4 +1,6 @@
-import { FEATURES } from './features.js';
+import { FEATURES } from '../core/features.js';
+
+const runtimeUrl = path => chrome.runtime.getURL(path);
 
 // Feature lookup map for O(1) access
 const FEATURE_MAP = new Map(FEATURES.map(f => [f.key, f]));
@@ -21,7 +23,7 @@ document.addEventListener('DOMContentLoaded', () => {
     document.querySelector('header')?.addEventListener('click', e => {
         const btn = e.target.closest('.btn-icon');
         if (!btn) return;
-        if (btn.id === 'open-favorites') window.open('features/favorites/favorites.html', '_blank');
+        if (btn.id === 'open-favorites') window.open(runtimeUrl('src/features/favorites/favorites.html'), '_blank');
         if (btn.id === 'open-settings') openSettings();
     });
 
@@ -72,6 +74,8 @@ document.addEventListener('DOMContentLoaded', () => {
         mainView.style.display = 'block';
         featureContent.classList.remove('active');
         featureContent.innerHTML = '';
+        const existingStyle = document.getElementById('feature-style');
+        if (existingStyle) existingStyle.remove();
     });
 
     function openSettings() {
@@ -153,17 +157,17 @@ document.addEventListener('DOMContentLoaded', () => {
         featureContent.classList.add('active');
         try {
             const [html, logic] = await Promise.all([
-                fetch(feature.ui).then(r => r.text()),
+                fetch(runtimeUrl(feature.ui)).then(r => r.text()),
                 feature.logic ? feature.logic() : null
             ]);
             // Load feature-specific styles if exists
+            const existingStyle = document.getElementById('feature-style');
+            if (existingStyle) existingStyle.remove();
             if (feature.style) {
-                const existingStyle = document.getElementById('feature-style');
-                if (existingStyle) existingStyle.remove();
                 const link = document.createElement('link');
                 link.id = 'feature-style';
                 link.rel = 'stylesheet';
-                link.href = feature.style;
+                link.href = runtimeUrl(feature.style);
                 document.head.appendChild(link);
             }
             featureContent.innerHTML = html;

@@ -72,7 +72,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     const todoFab = document.getElementById('todo-fab');
     if (todoFab) {
         todoFab.addEventListener('click', () => {
-            chrome.tabs.create({ url: chrome.runtime.getURL('features/todo/todo.html') });
+            chrome.tabs.create({ url: chrome.runtime.getURL('src/features/todo/todo.html') });
         });
     }
 });

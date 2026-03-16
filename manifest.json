@@ -5,18 +5,18 @@
   "manifest_version": 3,
   "action": {
     "default_icon": "icon.png",
-    "default_popup": "popup.html"
+    "default_popup": "src/popup/index.html"
   },
   "background": {
-    "service_worker": "background.js"
+    "service_worker": "src/background/index.js"
   },
   "chrome_url_overrides": {
-    "newtab": "features/edge-home/newtab.html"
+    "newtab": "src/features/edge-home/newtab.html"
   },
   "content_scripts": [
     {
       "matches": ["http://*/*", "https://*/*"],
-      "js": ["features/translate/selection-listener.js"],
+      "js": ["src/content-scripts/translate.js"],
       "run_at": "document_end",
       "all_frames": false
     }

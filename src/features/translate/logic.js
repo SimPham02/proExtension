@@ -8,7 +8,7 @@ async function injectScriptIfNeeded(tabId) {
 
     await chrome.scripting.executeScript({
       target: { tabId },
-      files: ['features/translate/selection-listener.js']
+      files: ['src/content-scripts/translate.js']
     });
   } catch (e) {}
 }

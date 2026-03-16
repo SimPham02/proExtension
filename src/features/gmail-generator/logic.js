@@ -1,3 +1,5 @@
+import { copyToClipboard } from '../../common/clipboard.js';
+
 // Gmail Generator Logic
 
 // Sinh tất cả các biến thể thêm dấu chấm vào giữa các ký tự (không thay đổi thứ tự)
@@ -21,19 +23,7 @@ export function generateGmailVariants(base) {
     return Array.from(results);
 }
 
-export async function copyToClipboard(text) {
-    if (navigator && navigator.clipboard) {
-        await navigator.clipboard.writeText(text);
-    } else {
-        // Fallback cho môi trường không hỗ trợ
-        const textarea = document.createElement('textarea');
-        textarea.value = text;
-        document.body.appendChild(textarea);
-        textarea.select();
-        document.execCommand('copy');
-        document.body.removeChild(textarea);
-    }
-}
+export { copyToClipboard };
 
 // Hàm khởi tạo UI cho feature này
 export function initUI() {
