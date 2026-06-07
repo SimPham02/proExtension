@@ -1809,12 +1809,6 @@ body {
     font-weight: 500;
 }
 
-.calendar-lunar {
-    font-size: 10px;
-    opacity: 0.7;
-    margin-top: 2px;
-}
-
 .calendar-footer {
     margin-top: 20px;
 }

@@ -605,91 +605,12 @@ function renderCalendar() {
             dayDiv.classList.add('today');
         }
         
-        const lunar = getLunarDate(date.getDate(), date.getMonth() + 1, date.getFullYear());
-        
         dayDiv.innerHTML = `
             <div class="calendar-day-number">${date.getDate()}</div>
-            <div class="calendar-lunar">${lunar.day}/${lunar.month}</div>
         `;
         
         daysContainer.appendChild(dayDiv);
     }
-}
-
-// Calibrated lunar date calculation for Vietnamese calendar
-function getLunarDate(day, month, year) {
-    // Use calibrated calculation based on known dates
-    const lunarData = calculateCalibratedLunarDate(day, month, year);
-
-    return {
-        day: lunarData.day,
-        month: lunarData.month
-    };
-}
-
-// Calibrated lunar calculation using known reference points
-function calculateCalibratedLunarDate(day, month, year) {
-    // Known reference: January 6, 2026 = Lunar 18/11/2025
-    // This gives us a calibration point
-
-    const targetJd = julianDayNumber(6, 1, 2026);
-    const targetLunar = { day: 18, month: 11, year: 2025 };
-
-    // Calculate days from our reference point
-    const currentJd = julianDayNumber(day, month, year);
-    const daysDiff = currentJd - targetJd;
-
-    // Lunar month is approximately 29.530588 days
-    const lunarMonthLength = 29.530588;
-    const lunarDayLength = lunarMonthLength;
-
-    // Calculate lunar date relative to reference
-    let lunarDay = targetLunar.day + Math.round(daysDiff);
-    let lunarMonth = targetLunar.month;
-    let lunarYear = targetLunar.year;
-
-    // Adjust for month boundaries
-    while (lunarDay > 30) {
-        lunarDay -= 30;
-        lunarMonth += 1;
-        if (lunarMonth > 12) {
-            lunarMonth = 1;
-            lunarYear += 1;
-        }
-    }
-
-    while (lunarDay < 1) {
-        lunarDay += 30;
-        lunarMonth -= 1;
-        if (lunarMonth < 1) {
-            lunarMonth = 12;
-            lunarYear -= 1;
-        }
-    }
-
-    // Handle leap months (simplified - add leap month every 19 years)
-    const yearsDiff = lunarYear - 2025;
-    const leapMonths = Math.floor(yearsDiff / 19);
-    lunarMonth += leapMonths;
-    if (lunarMonth > 12) {
-        lunarMonth -= 12;
-        lunarYear += 1;
-    }
-
-    return {
-        day: Math.max(1, Math.min(30, lunarDay)),
-        month: lunarMonth,
-        year: lunarYear
-    };
-}
-
-// Convert Gregorian date to Julian Day Number
-function julianDayNumber(day, month, year) {
-    let a = Math.floor((14 - month) / 12);
-    let y = year + 4800 - a;
-    let m = month + 12 * a - 3;
-
-    return day + Math.floor((153 * m + 2) / 5) + 365 * y + Math.floor(y / 4) - Math.floor(y / 100) + Math.floor(y / 400) - 32045;
 }
 
 // ===== Thời tiết =====
