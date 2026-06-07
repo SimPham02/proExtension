@@ -38,6 +38,30 @@
     --bounce: cubic-bezier(0.34, 1.56, 0.64, 1);
 }
 
+body[data-theme="linux"] {
+    --bg-primary: #07130f;
+    --bg-secondary: #0d1f1a;
+    --bg-card: rgba(7, 19, 15, 0.72);
+    --bg-card-hover: rgba(16, 185, 129, 0.14);
+    --bg-glass: rgba(7, 19, 15, 0.78);
+    --text-primary: #ecfdf5;
+    --text-secondary: rgba(209, 250, 229, 0.88);
+    --text-muted: rgba(167, 243, 208, 0.58);
+    --accent: #10b981;
+    --accent-glow: rgba(16, 185, 129, 0.42);
+    --accent-light: #67e8f9;
+    --border: rgba(45, 212, 191, 0.16);
+    --border-hover: rgba(251, 191, 36, 0.34);
+    --shadow-sm: 0 4px 12px rgba(0, 0, 0, 0.22);
+    --shadow-md: 0 10px 28px rgba(0, 0, 0, 0.34);
+    --shadow-lg: 0 18px 48px rgba(0, 0, 0, 0.42);
+    --shadow-glow: 0 0 24px rgba(16, 185, 129, 0.32);
+    --radius-sm: 8px;
+    --radius-md: 12px;
+    --radius-lg: 16px;
+    --radius-xl: 20px;
+}
+
 /* Light Mode */
 @media (prefers-color-scheme: light) {
     :root {
@@ -122,6 +146,375 @@ body {
     filter: blur(24px);
 }
 
+body[data-theme="linux"] .bg-gradient {
+    background:
+        linear-gradient(rgba(103, 232, 249, 0.05) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(103, 232, 249, 0.05) 1px, transparent 1px),
+        radial-gradient(circle at 12% 18%, rgba(16, 185, 129, 0.18), transparent 32%),
+        radial-gradient(circle at 86% 82%, rgba(251, 191, 36, 0.1), transparent 30%);
+    background-size: 44px 44px, 44px 44px, auto, auto;
+    filter: none;
+    opacity: 0.7;
+}
+
+body[data-theme="linux"] .container {
+    max-width: 1040px;
+}
+
+body[data-theme="linux"] .time {
+    font-family: 'Consolas', 'Cascadia Mono', monospace;
+    letter-spacing: 0;
+    text-shadow: 0 0 18px rgba(16, 185, 129, 0.28);
+}
+
+body[data-theme="linux"] .greeting::before {
+    content: '> ';
+    color: var(--accent-light);
+}
+
+body[data-theme="linux"] .search-input-wrapper,
+body[data-theme="linux"] .shortcut-search-wrapper,
+body[data-theme="linux"] .ai-card,
+body[data-theme="linux"] .quote-section,
+body[data-theme="linux"] .todo-panel,
+body[data-theme="linux"] .folder-view-content,
+body[data-theme="linux"] .modal-content {
+    border-color: var(--border);
+    box-shadow: inset 0 1px 0 rgba(236, 253, 245, 0.05), var(--shadow-md);
+}
+
+body[data-theme="linux"] .search-input-wrapper::before {
+    content: '$';
+    color: var(--accent-light);
+    font-family: 'Consolas', 'Cascadia Mono', monospace;
+    font-weight: 700;
+    padding-left: 4px;
+}
+
+body[data-theme="linux"] #search-input {
+    font-family: 'Consolas', 'Cascadia Mono', monospace;
+}
+
+body[data-theme="linux"] .shortcut-icon {
+    border-radius: 14px;
+    background: linear-gradient(135deg, rgba(16, 185, 129, 0.24), rgba(103, 232, 249, 0.09));
+    border-color: rgba(103, 232, 249, 0.22);
+}
+
+body[data-theme="linux"] .fab {
+    border: 1px solid rgba(103, 232, 249, 0.24);
+}
+
+body[data-theme="linux"] .container {
+    max-width: none;
+    padding: 86px 40px 40px;
+    display: grid;
+    grid-template-columns: minmax(320px, 420px) minmax(420px, 1fr);
+    grid-template-areas:
+        "clock shortcuts"
+        "search shortcuts"
+        "ai shortcuts"
+        "quote shortcuts";
+    gap: 22px 28px;
+    align-content: start;
+}
+
+body[data-theme="linux"] .header {
+    position: fixed;
+    top: 18px;
+    left: 40px;
+    right: 40px;
+    height: 48px;
+    z-index: 950;
+    padding: 0 12px 0 18px;
+    border: 1px solid rgba(103, 232, 249, 0.22);
+    border-radius: 14px;
+    background: rgba(5, 15, 12, 0.82);
+    backdrop-filter: blur(18px);
+    box-shadow: 0 12px 32px rgba(0, 0, 0, 0.34);
+}
+
+body[data-theme="linux"] .header::before {
+    content: 'pro@newtab:~';
+    color: var(--accent-light);
+    font-family: 'Consolas', 'Cascadia Mono', monospace;
+    font-size: 13px;
+    font-weight: 700;
+    margin-right: auto;
+}
+
+body[data-theme="linux"] .date-info {
+    margin-left: 20px;
+}
+
+body[data-theme="linux"] .day {
+    font-size: 11px;
+    letter-spacing: 1px;
+    color: #fbbf24;
+}
+
+body[data-theme="linux"] .full-date {
+    font-size: 12px;
+    color: var(--text-secondary);
+}
+
+body[data-theme="linux"] .clock-section,
+body[data-theme="linux"] .search-section,
+body[data-theme="linux"] .ai-section,
+body[data-theme="linux"] .quote-section,
+body[data-theme="linux"] .shortcuts-section {
+    animation: none;
+}
+
+body[data-theme="linux"] .clock-section {
+    grid-area: clock;
+    position: relative;
+    text-align: left;
+    padding: 48px 24px 24px;
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    background: rgba(5, 15, 12, 0.78);
+    box-shadow: inset 0 1px 0 rgba(236, 253, 245, 0.06), var(--shadow-md);
+}
+
+body[data-theme="linux"] .clock-section::before {
+    content: '';
+    position: absolute;
+    top: 16px;
+    left: 18px;
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    background: #ef4444;
+    box-shadow: 18px 0 #fbbf24, 36px 0 #10b981;
+}
+
+body[data-theme="linux"] .clock-section::after {
+    content: 'system time';
+    position: absolute;
+    top: 12px;
+    right: 18px;
+    color: var(--text-muted);
+    font-family: 'Consolas', 'Cascadia Mono', monospace;
+    font-size: 12px;
+}
+
+body[data-theme="linux"] .time {
+    font-size: clamp(44px, 6vw, 72px);
+    background: none;
+    -webkit-text-fill-color: currentColor;
+    color: var(--text-primary);
+}
+
+body[data-theme="linux"] .greeting {
+    max-width: 100%;
+    color: var(--accent-light);
+    font-family: 'Consolas', 'Cascadia Mono', monospace;
+    font-size: 15px;
+    letter-spacing: 0;
+}
+
+body[data-theme="linux"] .search-section {
+    grid-area: search;
+    max-width: none;
+    margin: 0;
+}
+
+body[data-theme="linux"] .search-box {
+    gap: 10px;
+}
+
+body[data-theme="linux"] .search-input-wrapper {
+    min-height: 58px;
+    border-radius: 12px;
+    padding: 6px 10px;
+    background: rgba(2, 8, 7, 0.86);
+    border: 1px solid rgba(103, 232, 249, 0.22);
+    box-shadow: inset 0 0 0 1px rgba(16, 185, 129, 0.06), var(--shadow-sm);
+}
+
+body[data-theme="linux"] .search-engine-dropdown {
+    margin-right: 4px;
+}
+
+body[data-theme="linux"] .engine-dropbtn,
+body[data-theme="linux"] .voice-btn,
+body[data-theme="linux"] .image-btn {
+    width: 42px;
+    height: 42px;
+    min-width: 42px;
+    border-radius: 10px;
+    background: rgba(16, 185, 129, 0.08);
+    border: 1px solid rgba(103, 232, 249, 0.14);
+}
+
+body[data-theme="linux"] #search-input {
+    padding: 12px 0;
+    font-size: 15px;
+    color: #d1fae5;
+}
+
+body[data-theme="linux"] .shortcuts-section {
+    grid-area: shortcuts;
+    min-height: calc(100vh - 126px);
+    padding: 22px;
+    border: 1px solid rgba(103, 232, 249, 0.2);
+    border-radius: 18px;
+    background: linear-gradient(180deg, rgba(5, 15, 12, 0.82), rgba(5, 15, 12, 0.58));
+    box-shadow: inset 0 1px 0 rgba(236, 253, 245, 0.06), var(--shadow-lg);
+}
+
+body[data-theme="linux"] .shortcuts-header {
+    margin-bottom: 12px;
+    padding: 0;
+    border-bottom: 1px solid rgba(103, 232, 249, 0.14);
+    padding-bottom: 14px;
+}
+
+body[data-theme="linux"] .shortcuts-header span,
+body[data-theme="linux"] .ai-header {
+    color: var(--accent-light);
+    font-family: 'Consolas', 'Cascadia Mono', monospace;
+    text-transform: none;
+    letter-spacing: 0;
+}
+
+body[data-theme="linux"] .shortcuts-header span::before {
+    content: './';
+    color: #fbbf24;
+}
+
+body[data-theme="linux"] .add-shortcut-btn {
+    border-style: solid;
+    border-radius: 10px;
+    background: rgba(16, 185, 129, 0.1);
+    color: var(--accent-light);
+}
+
+body[data-theme="linux"] .shortcuts-container-scroll {
+    max-height: calc(100vh - 210px);
+    padding-right: 4px;
+}
+
+body[data-theme="linux"] .shortcuts-grid {
+    grid-template-columns: repeat(auto-fill, minmax(104px, 1fr));
+    gap: 14px;
+    padding: 10px 0 4px;
+}
+
+body[data-theme="linux"] .shortcut {
+    width: 100%;
+    min-height: 116px;
+    padding: 14px 10px;
+    border: 1px solid rgba(103, 232, 249, 0.12);
+    border-radius: 14px;
+    background: rgba(9, 22, 18, 0.72);
+}
+
+body[data-theme="linux"] .shortcut:hover {
+    background: rgba(16, 185, 129, 0.13);
+    border-color: rgba(251, 191, 36, 0.38);
+    transform: translateY(-3px);
+    box-shadow: 0 12px 28px rgba(0, 0, 0, 0.32);
+}
+
+body[data-theme="linux"] .shortcut-icon {
+    width: 54px;
+    height: 54px;
+    box-shadow: inset 0 1px 0 rgba(236, 253, 245, 0.08);
+}
+
+body[data-theme="linux"] .shortcut-icon img {
+    width: 34px;
+    height: 34px;
+}
+
+body[data-theme="linux"] .shortcut-name {
+    font-family: 'Consolas', 'Cascadia Mono', monospace;
+    font-size: 12px;
+}
+
+body[data-theme="linux"] .ai-section {
+    grid-area: ai;
+}
+
+body[data-theme="linux"] .ai-grid {
+    grid-template-columns: 1fr;
+    gap: 10px;
+}
+
+body[data-theme="linux"] .ai-card {
+    min-height: 48px;
+    padding: 12px 14px;
+    border-radius: 12px;
+    background: rgba(5, 15, 12, 0.72);
+}
+
+body[data-theme="linux"] .ai-card::after {
+    content: 'run';
+    margin-left: auto;
+    color: #fbbf24;
+    font-family: 'Consolas', 'Cascadia Mono', monospace;
+    font-size: 11px;
+}
+
+body[data-theme="linux"] .ai-card:hover {
+    transform: translateX(4px);
+}
+
+body[data-theme="linux"] .quote-section {
+    grid-area: quote;
+    margin: 0;
+    padding: 18px;
+    text-align: left;
+    border: 1px solid rgba(103, 232, 249, 0.16);
+    border-radius: 14px;
+    background: rgba(5, 15, 12, 0.66);
+}
+
+body[data-theme="linux"] .quote-text,
+body[data-theme="linux"] .quote-author {
+    font-family: 'Consolas', 'Cascadia Mono', monospace;
+}
+
+body[data-theme="linux"] .quote-text {
+    font-size: 14px;
+}
+
+body[data-theme="linux"] .quote-author {
+    color: #fbbf24;
+}
+
+@media (max-width: 900px) {
+    body[data-theme="linux"] .container {
+        padding: 84px 20px 32px;
+        grid-template-columns: 1fr;
+        grid-template-areas:
+            "clock"
+            "search"
+            "shortcuts"
+            "ai"
+            "quote";
+    }
+
+    body[data-theme="linux"] .header {
+        left: 16px;
+        right: 16px;
+    }
+
+    body[data-theme="linux"] .header::before {
+        display: none;
+    }
+
+    body[data-theme="linux"] .shortcuts-section {
+        min-height: auto;
+    }
+
+    body[data-theme="linux"] .shortcuts-container-scroll {
+        max-height: 360px;
+    }
+}
+
 /* ===== Container ===== */
 .container {
     max-width: 1000px;
@@ -165,44 +558,6 @@ body {
 
 .full-date:hover {
     color: var(--text-secondary);
-}
-
-.weather {
-    display: flex;
-    align-items: center;
-    gap: 12px;
-    background: linear-gradient(135deg, rgba(255, 255, 255, 0.1), rgba(255, 255, 255, 0.05));
-    padding: 10px 24px;
-    border-radius: 50px;
-    border: 1px solid rgba(255, 255, 255, 0.15);
-    backdrop-filter: blur(20px);
-    transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
-    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.1);
-}
-
-.weather:hover {
-    background: rgba(255, 255, 255, 0.15);
-    border-color: rgba(255, 255, 255, 0.3);
-    transform: translateY(-4px);
-    box-shadow: 0 12px 25px rgba(0, 0, 0, 0.2);
-}
-
-.weather-icon {
-    font-size: 20px;
-    color: #fbbf24;
-    filter: drop-shadow(0 0 8px rgba(251, 191, 36, 0.4));
-}
-
-.temp {
-    font-size: 18px;
-    font-weight: 600;
-}
-
-.city {
-    font-size: 14px;
-    color: var(--text-muted);
-    padding-left: 8px;
-    border-left: 1px solid var(--border);
 }
 
 /* ===== Clock ===== */
@@ -1669,11 +2024,6 @@ body {
         flex-direction: column;
         gap: 20px;
         align-items: flex-start;
-    }
-    
-    .weather {
-        align-self: flex-start;
-        padding: 6px 16px;
     }
     
     .time {

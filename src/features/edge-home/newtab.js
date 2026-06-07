@@ -1,5 +1,21 @@
 // ===== Cấu hình =====
 const CONFIG = {
+    themes: [
+        {
+            id: 'default',
+            name: 'Mặc định',
+            description: 'Glass tím xanh hiện tại',
+            icon: 'fa-wand-magic-sparkles',
+            defaultBackground: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)'
+        },
+        {
+            id: 'linux',
+            name: 'Linux Terminal',
+            description: 'Tối, sắc nét, xanh terminal',
+            icon: 'fa-terminal',
+            defaultBackground: 'linear-gradient(135deg, #07130f 0%, #0d1f1a 45%, #111827 100%)'
+        }
+    ],
     engines: {
         google: { url: 'https://www.google.com/search?q=', name: 'Google' },
         bing: { url: 'https://www.bing.com/search?q=', name: 'Bing' },
@@ -24,21 +40,7 @@ const CONFIG = {
         { text: "Sự sáng tạo là trí thông minh đang vui chơi.", author: "Albert Einstein" },
         { text: "Thay đổi là quy luật của cuộc sống.", author: "John F. Kennedy" },
         { text: "Điều duy nhất không thể là điều bạn không cố gắng.", author: "Jean Pictet" }
-    ],
-    weatherIcons: {
-        0: 'fa-sun', 1: 'fa-sun', 2: 'fa-cloud-sun', 3: 'fa-cloud',
-        45: 'fa-smog', 48: 'fa-smog', 51: 'fa-cloud-rain', 53: 'fa-cloud-rain',
-        55: 'fa-cloud-rain', 61: 'fa-cloud-showers-heavy', 63: 'fa-cloud-showers-heavy',
-        65: 'fa-cloud-showers-heavy', 71: 'fa-snowflake', 73: 'fa-snowflake',
-        75: 'fa-snowflake', 80: 'fa-cloud-showers-heavy', 95: 'fa-bolt'
-    },
-    weatherText: {
-        0: 'Trời quang', 1: 'Trời quang', 2: 'Có mây', 3: 'U ám',
-        45: 'Sương mù', 48: 'Sương mù', 51: 'Mưa phùn', 53: 'Mưa phùn',
-        55: 'Mưa phùn', 61: 'Mưa nhẹ', 63: 'Mưa vừa', 65: 'Mưa to',
-        71: 'Tuyết nhẹ', 73: 'Tuyết vừa', 75: 'Tuyết dày',
-        80: 'Mưa rào', 95: 'Dông'
-    }
+    ]
 };
 
 // ===== State =====
@@ -48,6 +50,7 @@ let state = {
     todos: [],
     currentEngine: 'google'
 };
+const DEFAULT_NEWTAB_THEME = 'default';
 let slideshowTimer = null;
 let currentSlideIndex = 0;
 const FAVICON_CACHE_KEY = 'edgeHomeFaviconCache';
@@ -200,7 +203,6 @@ async function cleanupFaviconCache(force = false) {
 document.addEventListener('DOMContentLoaded', async () => {
     await loadData();
     initClock();
-    initWeather();
     renderSearchEngineSelect(); // Gọi render trước khi init search
     initSearch();
     initShortcuts();
@@ -318,12 +320,12 @@ async function loadData() {
 // ===== Áp dụng cài đặt =====
 function applySettings() {
     const s = state.settings;
+    applyTheme(s.newtabTheme || DEFAULT_NEWTAB_THEME);
     toggle('clock-section', s.showClock ?? true);
     toggle('search-section', s.showSearch ?? true);
     toggle('shortcuts-section', s.showShortcuts ?? true);
     toggle('ai-section', s.showAiTools ?? true);
     toggle('quote-section', s.showQuote ?? true);
-    toggle('weather', s.showWeather ?? true);
 
     // Stop existing slideshow if any
     if (slideshowTimer) {
@@ -358,16 +360,26 @@ function applySettings() {
             }
         } else {
             // Default if list is empty
-            setPageBackground('linear-gradient(135deg, #667eea 0%, #764ba2 100%)');
+            setPageBackground(getCurrentTheme().defaultBackground);
         }
     } else {
         setPageBackground(bgValue, bgType);
     }
 }
 
+function getCurrentTheme() {
+    const themeId = state.settings.newtabTheme || DEFAULT_NEWTAB_THEME;
+    return CONFIG.themes.find(theme => theme.id === themeId) || CONFIG.themes[0];
+}
+
+function applyTheme(themeId) {
+    const nextTheme = CONFIG.themes.some(theme => theme.id === themeId) ? themeId : DEFAULT_NEWTAB_THEME;
+    document.body.dataset.theme = nextTheme;
+}
+
 function setPageBackground(value, type) {
     if (!value) {
-        document.body.style.backgroundImage = 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)';
+        document.body.style.backgroundImage = getCurrentTheme().defaultBackground;
         document.body.style.backgroundColor = 'var(--bg-primary)';
         return;
     }
@@ -610,34 +622,6 @@ function renderCalendar() {
         `;
         
         daysContainer.appendChild(dayDiv);
-    }
-}
-
-// ===== Thời tiết =====
-async function initWeather() {
-    if (state.settings.showWeather === false) return;
-    
-    try {
-        navigator.geolocation.getCurrentPosition(async (pos) => {
-            const { latitude, longitude } = pos.coords;
-            const res = await fetch(
-                `https://api.open-meteo.com/v1/forecast?latitude=${latitude}&longitude=${longitude}&current_weather=true`
-            );
-            const data = await res.json();
-            
-            if (data.current_weather) {
-                const { temperature, weathercode } = data.current_weather;
-                document.getElementById('temp').textContent = `${Math.round(temperature)}°C`;
-                document.getElementById('city').textContent = CONFIG.weatherText[weathercode] || 'Không rõ';
-                
-                const iconEl = document.querySelector('.weather-icon');
-                iconEl.className = `fa-solid ${CONFIG.weatherIcons[weathercode] || 'fa-cloud'} weather-icon`;
-            }
-        }, () => {
-            document.getElementById('city').textContent = 'Bật vị trí';
-        });
-    } catch (e) {
-        console.error('Lỗi thời tiết:', e);
     }
 }
 
@@ -1108,6 +1092,7 @@ async function openSettings() {
         modal.querySelector('#reset-home-settings')?.addEventListener('click', async () => {
             // Reset to defaults
             state.settings = {};
+            await chrome.storage.local.remove('edgeHomeSettings');
             await chrome.storage.sync.remove('edgeHomeSettings');
             applySettings();
             populateSettingsInputs(container);
@@ -1245,9 +1230,9 @@ function collectSettingsFrom(root) {
         showClock: getChecked('show-clock', true),
         showSearch: getChecked('show-search', true),
         showShortcuts: getChecked('show-shortcuts', true),
-        showWeather: getChecked('show-weather', true),
         showAiTools: getChecked('show-ai-tools', true),
         showQuote: getChecked('show-quote', true),
+        newtabTheme: root.querySelector('input[name="newtab-theme"]:checked')?.value || state.settings.newtabTheme || DEFAULT_NEWTAB_THEME,
         userName: (root.querySelector('#user-name')?.value || '').trim(),
         bgType: bgType || state.settings.bgType || 'gradient',
         bgValue: bgValue || state.settings.bgValue,
@@ -1263,9 +1248,10 @@ function populateSettingsInputs(root) {
     setChecked('show-clock', s.showClock ?? true);
     setChecked('show-search', s.showSearch ?? true);
     setChecked('show-shortcuts', s.showShortcuts ?? true);
-    setChecked('show-weather', s.showWeather ?? true);
     setChecked('show-ai-tools', s.showAiTools ?? true);
     setChecked('show-quote', s.showQuote ?? true);
+    const themeInput = root.querySelector(`input[name="newtab-theme"][value="${s.newtabTheme || DEFAULT_NEWTAB_THEME}"]`);
+    if (themeInput) themeInput.checked = true;
     if (root.querySelector('#user-name')) root.querySelector('#user-name').value = s.userName || '';
     
     // Populate Slideshow settings
