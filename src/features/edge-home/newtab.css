@@ -84,11 +84,6 @@ body {
     image-rendering: high-quality;
     -webkit-backface-visibility: hidden;
     backface-visibility: hidden;
-    -webkit-perspective: 1000;
-    perspective: 1000;
-    will-change: background-image;
-    
-    /* Ensure sharp rendering */
     -ms-interpolation-mode: nearest-neighbor;
     image-orientation: from-image;
 }
@@ -124,7 +119,7 @@ body {
         radial-gradient(circle at 50% 50%, rgba(14, 165, 233, 0.08) 0%, transparent 60%);
     pointer-events: none;
     z-index: -1;
-    filter: blur(40px);
+    filter: blur(24px);
 }
 
 /* ===== Container ===== */
@@ -298,7 +293,7 @@ body {
     box-shadow: 0 0 20px rgba(99, 102, 241, 0.25);
 }
 
-.search-input-wrapper {
+.search-input-wrapper-legacy {
     display: flex;
     align-items: center;
     background: linear-gradient(135deg, rgba(255, 255, 255, 0.1), rgba(255, 255, 255, 0.05));
@@ -306,7 +301,7 @@ body {
     border-radius: 30px;
     padding: 6px 12px 6px 12px; /* Đã chỉnh lại padding để cân đối với select icon */
     transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
-    backdrop-filter: blur(25px);
+    backdrop-filter: blur(12px);
     box-shadow: 0 15px 35px rgba(0, 0, 0, 0.2);
 }
 
@@ -362,7 +357,7 @@ body {
     top: calc(100% + 10px);
     left: 0;
     background: rgba(30, 30, 50, 0.95); /* Tăng độ đục để nhìn rõ hơn */
-    backdrop-filter: blur(25px);
+    backdrop-filter: blur(12px);
     border: 1px solid var(--border);
     border-radius: 16px;
     min-width: 58px;
@@ -418,7 +413,7 @@ body {
     border-radius: 30px;
     padding: 6px 16px 6px 8px;
     transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
-    backdrop-filter: blur(25px);
+    backdrop-filter: blur(12px);
     box-shadow: 0 15px 35px rgba(0, 0, 0, 0.2);
 }
 
@@ -618,7 +613,7 @@ body {
 .shortcut-icon {
     width: 64px;
     height: 64px;
-    background: linear-gradient(135deg, rgba(255, 255, 255, 0.15), rgba(255, 255, 255, 0.05));
+    background: linear-gradient(135deg, rgba(255, 255, 255, 0.22), rgba(255, 255, 255, 0.08));
     border-radius: 18px;
     display: flex;
     align-items: center;
@@ -644,8 +639,8 @@ body {
 }
 
 .shortcut-icon img {
-    width: 32px;
-    height: 32px;
+    width: 42px;
+    height: 42px;
     object-fit: contain;
     filter: drop-shadow(0 4px 8px rgba(0, 0, 0, 0.2));
     transition: transform 0.4s ease;
@@ -677,7 +672,7 @@ body {
     grid-template-columns: repeat(3, 1fr);
     gap: 5px;
     padding: 10px;
-    background: rgba(255, 255, 255, 0.1);
+    background: rgba(255, 255, 255, 0.14);
     backdrop-filter: blur(5px);
 }
 
@@ -694,8 +689,8 @@ body {
 }
 
 .mini-icon img {
-    width: 80%;
-    height: 80%;
+    width: 86%;
+    height: 86%;
     object-fit: contain;
     filter: none;
 }
@@ -735,7 +730,6 @@ body {
     opacity: 0; 
     visibility: hidden;
     transition: opacity 0.2s ease-out, visibility 0.2s ease-out;
-    will-change: opacity, visibility;
 }
 
 .folder-view.open {
@@ -747,10 +741,9 @@ body {
     position: absolute;
     inset: 0;
     background: rgba(0, 0, 0, 0.4);
-    backdrop-filter: blur(25px);
+    backdrop-filter: blur(12px);
     transition: opacity 0.25s ease-out;
     opacity: 0;
-    will-change: opacity;
 }
 
 .folder-view-overlay.drag-over {
@@ -767,14 +760,13 @@ body {
     width: 90%;
     max-width: 520px;
     background: linear-gradient(135deg, rgba(255, 255, 255, 0.1), rgba(255, 255, 255, 0.05));
-    backdrop-filter: blur(40px);
+    backdrop-filter: blur(16px);
     border-radius: 40px;
     padding: 40px;
     border: 1px solid rgba(255, 255, 255, 0.2);
     transform: scale(0.9) translateY(20px) translateZ(0);
     transition: transform 0.35s cubic-bezier(0.25, 0.46, 0.45, 0.94);
     box-shadow: 0 40px 80px rgba(0, 0, 0, 0.6), inset 0 0 0 1px rgba(255, 255, 255, 0.1);
-    will-change: transform;
 }
 
 .folder-view.open .folder-view-content {
@@ -876,7 +868,7 @@ body {
 .modal-content {
     position: relative;
     background: rgba(255, 255, 255, 0.1);
-    backdrop-filter: blur(30px);
+    backdrop-filter: blur(12px);
     border-radius: 20px;
     padding: 30px;
     border: 1px solid rgba(255, 255, 255, 0.2);
@@ -1355,7 +1347,7 @@ body {
     position: absolute;
     inset: 0;
     background: rgba(10, 12, 20, 0.8);
-    backdrop-filter: blur(30px);
+    backdrop-filter: blur(12px);
 }
 
 .launchpad-content {
@@ -1424,61 +1416,6 @@ body {
     width: 100%;
     height: 100%;
     object-fit: contain;
-}
-
-/* Folder View */
-.folder-view {
-    position: fixed;
-    inset: 0;
-    z-index: 2100;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    opacity: 0;
-    visibility: hidden;
-    transition: opacity 0.2s ease-out, visibility 0.2s ease-out;
-    will-change: opacity, visibility;
-}
-
-.folder-view.open {
-    opacity: 1;
-    visibility: visible;
-}
-
-.folder-view-overlay {
-    position: absolute;
-    inset: 0;
-    background: rgba(0, 0, 0, 0.4);
-    backdrop-filter: blur(10px);
-}
-
-.folder-view-content {
-    position: relative;
-    width: 90%;
-    max-width: 600px;
-    background: rgba(255, 255, 255, 0.1);
-    backdrop-filter: blur(30px);
-    border-radius: 40px;
-    padding: 40px;
-    border: 1px solid rgba(255, 255, 255, 0.1);
-    transform: scale(0.9) translateY(20px) translateZ(0);
-    transition: transform 0.35s cubic-bezier(0.25, 0.46, 0.45, 0.94);
-    will-change: transform;
-}
-
-.folder-view.open .folder-view-content {
-    transform: scale(1) translateY(0);
-}
-
-.folder-header {
-    text-align: center;
-    margin-bottom: 30px;
-}
-
-.folder-header h2 {
-    font-size: 24px;
-    color: white;
-    font-weight: 600;
 }
 
 .lp-item {

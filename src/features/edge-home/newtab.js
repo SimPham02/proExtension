@@ -45,10 +45,156 @@ const CONFIG = {
 let state = {
     settings: {},
     shortcuts: [],
+    todos: [],
     currentEngine: 'google'
 };
 let slideshowTimer = null;
 let currentSlideIndex = 0;
+const FAVICON_CACHE_KEY = 'edgeHomeFaviconCache';
+const FAVICON_CLEANUP_KEY = 'edgeHomeFaviconCacheCleanupAt';
+const FAVICON_CLEANUP_INTERVAL = 7 * 24 * 60 * 60 * 1000;
+const FAVICON_MAX_AGE = 90 * 24 * 60 * 60 * 1000;
+const FAVICON_MAX_ENTRIES = 100;
+let faviconCache = {};
+let faviconSaveTimer = null;
+const faviconFetches = new Map();
+
+function createLetterIcon(label, background = '#6366f1') {
+    const text = escapeSvgText(String(label || '?').trim().charAt(0).toUpperCase() || '?');
+    const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" viewBox="0 0 64 64"><rect width="64" height="64" rx="16" fill="${background}"/><text x="32" y="40" text-anchor="middle" font-family="Arial,sans-serif" font-size="28" font-weight="700" fill="white">${text}</text></svg>`;
+    return `data:image/svg+xml;charset=UTF-8,${encodeURIComponent(svg)}`;
+}
+
+function escapeSvgText(value) {
+    return value.replace(/[&<>"']/g, char => ({
+        '&': '&amp;',
+        '<': '&lt;',
+        '>': '&gt;',
+        '"': '&quot;',
+        "'": '&apos;'
+    }[char]));
+}
+
+function shortcutIcon(url, fallbackName = '') {
+    const domain = getDomainFromUrl(url);
+    if (domain) return faviconUrlForDomain(domain);
+    return createLetterIcon(fallbackName, '#334155');
+}
+
+function getDomainFromUrl(url) {
+    try {
+        return new URL(url).hostname.replace(/^www\./, '');
+    } catch {
+        return '';
+    }
+}
+
+function faviconUrlForDomain(domain) {
+    return `https://www.google.com/s2/favicons?domain=${encodeURIComponent(domain)}&sz=128`;
+}
+
+function applyShortcutImage(image, url, fallbackName = '') {
+    const domain = getDomainFromUrl(url);
+    image.alt = fallbackName || '';
+    image.loading = 'lazy';
+    image.referrerPolicy = 'no-referrer';
+    if (!domain) {
+        image.src = createLetterIcon(fallbackName, '#334155');
+        return;
+    }
+
+    const cached = faviconCache[domain];
+    if (cached?.dataUrl) {
+        cached.lastUsedAt = Date.now();
+        image.src = cached.dataUrl;
+        scheduleFaviconCacheSave();
+        return;
+    }
+
+    const remoteUrl = faviconUrlForDomain(domain);
+    image.src = remoteUrl;
+    image.onerror = () => {
+        image.onerror = null;
+        image.src = createLetterIcon(fallbackName, '#334155');
+    };
+    cacheFavicon(domain, remoteUrl, image).catch(() => {});
+}
+
+async function cacheFavicon(domain, remoteUrl, imageToUpdate) {
+    if (faviconCache[domain]?.dataUrl) return faviconCache[domain].dataUrl;
+    if (faviconFetches.has(domain)) return faviconFetches.get(domain);
+
+    const task = (async () => {
+        const response = await fetch(remoteUrl, { cache: 'force-cache' });
+        if (!response.ok) throw new Error('Khong tai duoc favicon');
+
+        const blob = await response.blob();
+        if (!blob.type.startsWith('image/') || blob.size > 128 * 1024) {
+            throw new Error('Favicon khong hop le');
+        }
+
+        const dataUrl = await blobToDataUrl(blob);
+        faviconCache[domain] = {
+            dataUrl,
+            updatedAt: Date.now(),
+            lastUsedAt: Date.now()
+        };
+        scheduleFaviconCacheSave();
+        if (imageToUpdate && imageToUpdate.isConnected) imageToUpdate.src = dataUrl;
+        return dataUrl;
+    })().finally(() => faviconFetches.delete(domain));
+
+    faviconFetches.set(domain, task);
+    return task;
+}
+
+function blobToDataUrl(blob) {
+    return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = () => resolve(reader.result);
+        reader.onerror = () => reject(reader.error);
+        reader.readAsDataURL(blob);
+    });
+}
+
+function scheduleFaviconCacheSave() {
+    if (faviconSaveTimer) clearTimeout(faviconSaveTimer);
+    faviconSaveTimer = setTimeout(() => {
+        chrome.storage.local.set({ [FAVICON_CACHE_KEY]: faviconCache });
+        faviconSaveTimer = null;
+    }, 500);
+}
+
+async function cleanupFaviconCache(force = false) {
+    const now = Date.now();
+    const { [FAVICON_CLEANUP_KEY]: lastCleanup = 0 } = await chrome.storage.local.get(FAVICON_CLEANUP_KEY);
+    if (!force && now - lastCleanup < FAVICON_CLEANUP_INTERVAL) return;
+
+    const usedDomains = new Set([
+        'google.com',
+        'bing.com',
+        'youtube.com',
+        'duckduckgo.com'
+    ]);
+    state.shortcuts.forEach(shortcut => {
+        const domain = getDomainFromUrl(shortcut.url);
+        if (domain) usedDomains.add(domain);
+    });
+
+    const freshEntries = Object.entries(faviconCache)
+        .filter(([domain, entry]) => {
+            const lastUsedAt = entry?.lastUsedAt || entry?.updatedAt || 0;
+            return usedDomains.has(domain) && now - lastUsedAt <= FAVICON_MAX_AGE && entry?.dataUrl;
+        })
+        .sort((a, b) => (b[1].lastUsedAt || b[1].updatedAt || 0) - (a[1].lastUsedAt || a[1].updatedAt || 0))
+        .slice(0, FAVICON_MAX_ENTRIES);
+
+    faviconCache = Object.fromEntries(freshEntries);
+    await chrome.storage.local.set({
+        [FAVICON_CACHE_KEY]: faviconCache,
+        [FAVICON_CLEANUP_KEY]: now
+    });
+}
 
 // ===== Khởi tạo =====
 document.addEventListener('DOMContentLoaded', async () => {
@@ -58,6 +204,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     renderSearchEngineSelect(); // Gọi render trước khi init search
     initSearch();
     initShortcuts();
+    initTodos();
     initQuote();
     applySettings();
     // Wire settings button on new tab
@@ -72,7 +219,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     const todoFab = document.getElementById('todo-fab');
     if (todoFab) {
         todoFab.addEventListener('click', () => {
-            chrome.tabs.create({ url: chrome.runtime.getURL('src/features/todo/todo.html') });
+            document.getElementById('todo-panel')?.classList.toggle('open');
         });
     }
 });
@@ -86,25 +233,28 @@ function renderSearchEngineSelect() {
     if (!dropdown || !dropbtn || !list) return;
 
     const engines = [
-        { value: 'google', icon: 'https://www.google.com/favicon.ico', name: 'Google' },
-        { value: 'bing', icon: 'https://www.bing.com/favicon.ico', name: 'Bing' },
-        { value: 'youtube', icon: 'https://www.youtube.com/favicon.ico', name: 'YouTube' },
-        { value: 'duckduckgo', icon: 'https://duckduckgo.com/favicon.ico', name: 'DuckDuckGo' }
+        { value: 'google', url: 'https://www.google.com', name: 'Google' },
+        { value: 'bing', url: 'https://www.bing.com', name: 'Bing' },
+        { value: 'youtube', url: 'https://www.youtube.com', name: 'YouTube' },
+        { value: 'duckduckgo', url: 'https://duckduckgo.com', name: 'DuckDuckGo' }
     ];
 
     // Khởi tạo icon hiện tại
     const current = engines.find(e => e.value === state.currentEngine) || engines[0];
-    currentIcon.src = current.icon;
+    applyShortcutImage(currentIcon, current.url, current.name);
 
     // Render danh sách icon
     list.innerHTML = '';
     engines.forEach(engine => {
         const item = document.createElement('div');
         item.className = `engine-item ${engine.value === state.currentEngine ? 'active' : ''}`;
-        item.innerHTML = `<img src="${engine.icon}" alt="${engine.name}" title="${engine.name}">`;
+        const icon = document.createElement('img');
+        icon.title = engine.name;
+        applyShortcutImage(icon, engine.url, engine.name);
+        item.appendChild(icon);
         item.addEventListener('click', () => {
             state.currentEngine = engine.value;
-            currentIcon.src = engine.icon;
+            applyShortcutImage(currentIcon, engine.url, engine.name);
             saveSettings({ searchEngine: state.currentEngine });
             
             // Update active state
@@ -140,7 +290,7 @@ async function loadData() {
     try {
         // Migrate from sync to local if needed, or just read local
         // We prefer local for settings now because of potential image data
-        const localKeys = ['edgeHomeSettings', 'edgeHomeShortcuts', 'edgeHomeTodos', 'edgeHomeSlideIndex'];
+        const localKeys = ['edgeHomeSettings', 'edgeHomeShortcuts', 'edgeHomeTodos', 'edgeHomeSlideIndex', FAVICON_CACHE_KEY];
         const localResult = await chrome.storage.local.get(localKeys);
         const syncResult = await chrome.storage.sync.get(['edgeHomeSettings', 'edgeHomeShortcuts', 'edgeHomeTodos']);
         
@@ -158,6 +308,8 @@ async function loadData() {
         state.todos = localResult.edgeHomeTodos || syncResult.edgeHomeTodos || [];
         state.currentEngine = state.settings.searchEngine || 'google';
         currentSlideIndex = localResult.edgeHomeSlideIndex || 0;
+        faviconCache = localResult[FAVICON_CACHE_KEY] || {};
+        cleanupFaviconCache().catch(() => {});
     } catch (e) {
         console.error('Lỗi load dữ liệu:', e);
     }
@@ -281,6 +433,84 @@ function setPageBackground(value, type) {
 
 function toggle(id, show) {
     document.getElementById(id)?.classList.toggle('hidden', !show);
+}
+
+function initTodos() {
+    const panel = document.getElementById('todo-panel');
+    const closeBtn = document.getElementById('close-todo');
+    const form = document.getElementById('todo-form');
+    const input = document.getElementById('todo-input');
+    const list = document.getElementById('todo-list');
+
+    if (!panel || !closeBtn || !form || !input || !list) return;
+
+    closeBtn.addEventListener('click', () => panel.classList.remove('open'));
+    form.addEventListener('submit', async (event) => {
+        event.preventDefault();
+        const text = input.value.trim();
+        if (!text) return;
+
+        state.todos.push({
+            id: crypto.randomUUID ? crypto.randomUUID() : `${Date.now()}-${Math.random()}`,
+            text,
+            done: false,
+            createdAt: Date.now()
+        });
+        input.value = '';
+        await saveTodos();
+        renderTodos();
+    });
+
+    renderTodos();
+}
+
+function renderTodos() {
+    const list = document.getElementById('todo-list');
+    const count = document.getElementById('todo-count');
+    if (!list || !count) return;
+
+    list.replaceChildren();
+    state.todos.forEach(todo => {
+        const item = document.createElement('div');
+        item.className = `todo-item ${todo.done ? 'done' : ''}`;
+
+        const checkbox = document.createElement('button');
+        checkbox.type = 'button';
+        checkbox.className = 'todo-checkbox';
+        checkbox.title = todo.done ? 'Đánh dấu chưa xong' : 'Đánh dấu đã xong';
+        checkbox.addEventListener('click', async () => {
+            todo.done = !todo.done;
+            await saveTodos();
+            renderTodos();
+        });
+
+        const text = document.createElement('span');
+        text.className = 'todo-text';
+        text.textContent = todo.text;
+
+        const deleteBtn = document.createElement('button');
+        deleteBtn.type = 'button';
+        deleteBtn.className = 'todo-delete';
+        deleteBtn.title = 'Xóa';
+        const icon = document.createElement('i');
+        icon.className = 'fa-solid fa-trash';
+        deleteBtn.appendChild(icon);
+        deleteBtn.addEventListener('click', async () => {
+            state.todos = state.todos.filter(itemToKeep => itemToKeep.id !== todo.id);
+            await saveTodos();
+            renderTodos();
+        });
+
+        item.append(checkbox, text, deleteBtn);
+        list.appendChild(item);
+    });
+
+    const remaining = state.todos.filter(todo => !todo.done).length;
+    count.textContent = `${remaining} việc`;
+}
+
+async function saveTodos() {
+    await chrome.storage.local.set({ edgeHomeTodos: state.todos });
 }
 
 // ===== Đồng hồ =====
@@ -593,7 +823,11 @@ function initShortcuts() {
         let url = document.getElementById('shortcut-url').value.trim();
         
         if (name && url) {
-            if (!url.startsWith('http')) url = 'https://' + url;
+            url = normalizeShortcutUrl(url);
+            if (!url) {
+                alert('URL khong hop le. Chi ho tro http hoac https.');
+                return;
+            }
             state.shortcuts.push({ name, url, folder: '', pinned: false });
             saveShortcuts();
             renderShortcuts();
@@ -602,6 +836,19 @@ function initShortcuts() {
             document.getElementById('shortcut-url').value = '';
         }
     });
+}
+
+function normalizeShortcutUrl(value) {
+    try {
+        const candidate = value.startsWith('http://') || value.startsWith('https://')
+            ? value
+            : `https://${value}`;
+        const url = new URL(candidate);
+        if (url.protocol !== 'http:' && url.protocol !== 'https:') return null;
+        return url.href;
+    } catch {
+        return null;
+    }
 }
 
 let isInitialLoad = true;
@@ -639,17 +886,21 @@ function renderShortcuts() {
         el.setAttribute('draggable', 'true');
         el.style.animationDelay = `${i * 0.05}s`;
         
-        let miniIconsHtml = '';
+        const iconGrid = document.createElement('div');
+        iconGrid.className = 'shortcut-icon folder-icon';
         folder.items.slice(0, 9).forEach(item => {
-            miniIconsHtml += `<div class="mini-icon"><img src="https://www.google.com/s2/favicons?domain=${item.url}&sz=32" alt=""></div>`;
+            const miniIcon = document.createElement('div');
+            miniIcon.className = 'mini-icon';
+            const image = document.createElement('img');
+            applyShortcutImage(image, item.url, item.name);
+            miniIcon.appendChild(image);
+            iconGrid.appendChild(miniIcon);
         });
 
-        el.innerHTML = `
-            <div class="shortcut-icon folder-icon">
-                ${miniIconsHtml}
-            </div>
-            <span class="shortcut-name">${folderName}</span>
-        `;
+        const nameEl = document.createElement('span');
+        nameEl.className = 'shortcut-name';
+        nameEl.textContent = folderName;
+        el.append(iconGrid, nameEl);
 
         el.addEventListener('click', () => openFolder(folderName, folder.items));
         setupDragEvents(el, folderName, true);
@@ -669,20 +920,32 @@ function createShortcutElement(s) {
     const el = document.createElement('div');
     el.className = 'shortcut';
     el.setAttribute('draggable', 'true');
-    el.innerHTML = `
-        <div class="shortcut-icon">
-            <img src="https://www.google.com/s2/favicons?domain=${s.url}&sz=64" alt="${s.name}">
-        </div>
-        <span class="shortcut-name">${s.name}</span>
-        <button class="shortcut-delete" data-index="${s.originalIndex}"><i class="fa-solid fa-xmark"></i></button>
-    `;
+
+    const iconWrap = document.createElement('div');
+    iconWrap.className = 'shortcut-icon';
+    const image = document.createElement('img');
+    applyShortcutImage(image, s.url, s.name);
+    iconWrap.appendChild(image);
+
+    const nameEl = document.createElement('span');
+    nameEl.className = 'shortcut-name';
+    nameEl.textContent = s.name || '';
+
+    const deleteBtn = document.createElement('button');
+    deleteBtn.className = 'shortcut-delete';
+    deleteBtn.dataset.index = s.originalIndex;
+    const deleteIcon = document.createElement('i');
+    deleteIcon.className = 'fa-solid fa-xmark';
+    deleteBtn.appendChild(deleteIcon);
+
+    el.append(iconWrap, nameEl, deleteBtn);
 
     el.addEventListener('click', (e) => {
         if (e.target.closest('.shortcut-delete')) return;
         window.location.href = s.url;
     });
 
-    el.querySelector('.shortcut-delete').addEventListener('click', (e) => {
+    deleteBtn.addEventListener('click', (e) => {
         e.preventDefault();
         e.stopPropagation();
         state.shortcuts.splice(s.originalIndex, 1);

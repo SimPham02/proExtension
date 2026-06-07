@@ -10,6 +10,9 @@
   "background": {
     "service_worker": "src/background/index.js"
   },
+  "content_security_policy": {
+    "extension_pages": "script-src 'self'; object-src 'self'; img-src 'self' data: https:; connect-src 'self' https:;"
+  },
   "chrome_url_overrides": {
     "newtab": "src/features/edge-home/newtab.html"
   },
@@ -22,5 +25,12 @@
     }
   ],
   "permissions": ["bookmarks", "storage", "tabs", "activeTab", "scripting", "cookies"],
-  "host_permissions": ["<all_urls>"]
+  "host_permissions": [
+    "http://*/*",
+    "https://*/*",
+    "https://api.mail.tm/*",
+    "https://open.er-api.com/*",
+    "http://*.studocu.com/*",
+    "https://*.studocu.com/*"
+  ]
 }

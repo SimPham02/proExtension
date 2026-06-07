@@ -1,57 +1,89 @@
 import { copyToClipboard } from '../../common/clipboard.js';
 
-// Gmail Generator Logic
+const GMAIL_DOMAIN = '@gmail.com';
+const MAX_PREFIX_LENGTH = 24;
+const MAX_VARIANT_COUNT = 50000;
 
-// Sinh tất cả các biến thể thêm dấu chấm vào giữa các ký tự (không thay đổi thứ tự)
-export function generateGmailVariants(base) {
-    if (!base || base.length < 2) return [];
-    // Chỉ lấy phần trước @ nếu có
-    let prefix = base.split('@')[0];
-    let suffix = '@gmail.com';
-    // Tạo tất cả các vị trí có thể chèn dấu chấm
-    const results = new Set();
-    const n = prefix.length;
-    // Sử dụng bitmask để sinh các trường hợp chấm
-    for (let mask = 1; mask < (1 << (n - 1)); mask++) {
-        let s = '';
-        for (let i = 0; i < n; i++) {
-            s += prefix[i];
-            if (i < n - 1 && (mask & (1 << i))) s += '.';
-        }
-        results.add(s + suffix);
+export function generateGmailVariants(base, maxVariants = MAX_VARIANT_COUNT) {
+    const prefix = normalizeGmailPrefix(base);
+    if (prefix.length < 2) return [];
+
+    const variantCount = 2 ** (prefix.length - 1) - 1;
+    if (prefix.length > MAX_PREFIX_LENGTH || variantCount > maxVariants) {
+        throw new Error('Gmail qua dai, vui long nhap toi da 16-24 ky tu de tranh treo popup.');
     }
-    return Array.from(results);
+
+    const results = [];
+    for (let mask = 1; mask <= variantCount; mask += 1) {
+        results.push(applyDotMask(prefix, mask));
+    }
+
+    return results.map(value => `${value}${GMAIL_DOMAIN}`);
 }
 
 export { copyToClipboard };
 
-// Hàm khởi tạo UI cho feature này
 export function initUI() {
     const genBtn = document.getElementById('genBtn');
-    if (genBtn) {
-        const output = document.getElementById('output');
-        const gmailInput = document.getElementById('gmailInput');
-        const copyStatus = document.getElementById('copyStatus');
-        genBtn.addEventListener('click', async function() {
-            const base = gmailInput.value.trim();
-            output.textContent = '';
-            copyStatus.textContent = '';
-            if (!base) {
-                output.textContent = 'Vui lòng nhập Gmail gốc!';
-                return;
-            }
-            const variants = generateGmailVariants(base);
+    const output = document.getElementById('output');
+    const gmailInput = document.getElementById('gmailInput');
+    const copyStatus = document.getElementById('copyStatus');
+
+    if (!genBtn || !output || !gmailInput || !copyStatus) return;
+
+    genBtn.addEventListener('click', async () => {
+        output.textContent = '';
+        copyStatus.textContent = '';
+        output.style.display = 'block';
+
+        try {
+            const variants = generateGmailVariants(gmailInput.value);
             if (variants.length === 0) {
-                output.textContent = 'Không thể tạo biến thể với chuỗi này!';
-                output.style.display = 'block';
+                output.textContent = 'Khong the tao bien the voi chuoi nay!';
                 return;
             }
-            const randomVariant = variants[Math.floor(Math.random() * variants.length)];
+
+            const randomVariant = variants[randomInt(variants.length)];
             output.textContent = randomVariant;
-            output.style.display = 'block';
             await copyToClipboard(randomVariant);
-            copyStatus.textContent = 'Đã copy biến thể vào clipboard!';
-        });
-    }
+            copyStatus.textContent = 'Da copy bien the vao clipboard!';
+        } catch (error) {
+            output.textContent = error.message || 'Khong the tao bien the Gmail.';
+        }
+    });
 }
 
+function normalizeGmailPrefix(value) {
+    return String(value || '')
+        .trim()
+        .toLowerCase()
+        .split('@')[0]
+        .replace(/\./g, '');
+}
+
+function applyDotMask(prefix, mask) {
+    let value = '';
+    for (let index = 0; index < prefix.length; index += 1) {
+        value += prefix[index];
+        if (index < prefix.length - 1 && (mask & (2 ** index))) {
+            value += '.';
+        }
+    }
+    return value;
+}
+
+function randomInt(maxExclusive) {
+    if (globalThis.crypto?.getRandomValues) {
+        const buffer = new Uint32Array(1);
+        const maxUint32 = 0xffffffff;
+        const limit = maxUint32 - (maxUint32 % maxExclusive);
+
+        do {
+            globalThis.crypto.getRandomValues(buffer);
+        } while (buffer[0] >= limit);
+
+        return buffer[0] % maxExclusive;
+    }
+
+    return Math.floor(Math.random() * maxExclusive);
+}

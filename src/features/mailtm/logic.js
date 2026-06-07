@@ -1,36 +1,38 @@
-// Mail.tm Feature Logic
+import { clearElement, createElement } from '../../common/dom.js';
+
+const ACCOUNT_STORAGE_KEY = 'mailtm_account';
+const API_BASE_URL = 'https://api.mail.tm';
 
 let currentAccount = null;
 let currentToken = null;
+let rootClickHandler = null;
 
 export async function initUI() {
-            // Gán sự kiện xem nội dung mail (CSP safe)
-            document.addEventListener('click', function(e) {
-                if (e.target && e.target.classList && e.target.classList.contains('viewMailBtn')) {
-                    const mailId = e.target.getAttribute('data-mailid');
-                    if (mailId) showMailTmContent(mailId);
-                }
-            });
-        // Modal đọc mail
-        const mailModal = document.getElementById('mailModal');
-        const closeMailModal = document.getElementById('closeMailModal');
-        const modalMailSubject = document.getElementById('modalMailSubject');
-        const modalMailFrom = document.getElementById('modalMailFrom');
-        const modalMailText = document.getElementById('modalMailText');
-
-        if (closeMailModal && mailModal) {
-            closeMailModal.onclick = () => {
-                mailModal.style.display = 'none';
-            };
-        }
+    const root = document.getElementById('feature-content') || document;
     const createBtn = document.getElementById('createMailBtn');
     const downloadBtn = document.getElementById('downloadMailBtn');
     const mailInfo = document.getElementById('mailInfo');
     const mailList = document.getElementById('mailList');
+    const mailModal = document.getElementById('mailModal');
+    const closeMailModal = document.getElementById('closeMailModal');
 
-    // Load từ localStorage nếu có
-    const saved = JSON.parse(localStorage.getItem('mailtm_account') || 'null');
-    if (saved && saved.address && saved.token) {
+    if (!createBtn || !downloadBtn || !mailInfo || !mailList) return;
+
+    rootClickHandler = event => {
+        const viewButton = event.target.closest?.('.viewMailBtn');
+        if (!viewButton) return;
+
+        const mailId = viewButton.dataset.mailId;
+        if (mailId) showMailTmContent(mailId);
+    };
+    root.addEventListener('click', rootClickHandler);
+
+    closeMailModal?.addEventListener('click', () => {
+        if (mailModal) mailModal.style.display = 'none';
+    });
+
+    const saved = loadSavedAccount();
+    if (saved?.address && saved?.token) {
         currentAccount = saved;
         currentToken = saved.token;
         showAccountInfo();
@@ -38,105 +40,208 @@ export async function initUI() {
     }
 
     createBtn.onclick = async () => {
-        mailInfo.textContent = 'Đang tạo mail ảo...';
+        mailInfo.textContent = 'Dang tao mail ao...';
         mailInfo.style.display = 'block';
-        mailList.innerHTML = '';
+        clearElement(mailList);
         downloadBtn.style.display = 'none';
         await createMailAccount();
     };
 
     downloadBtn.onclick = () => {
-        if (currentAccount) {
-            const blob = new Blob([JSON.stringify(currentAccount, null, 2)], {type: 'application/json'});
-            const url = URL.createObjectURL(blob);
-            const a = document.createElement('a');
-            a.href = url;
-            a.download = 'mailtm_account.json';
-            a.click();
-            URL.revokeObjectURL(url);
+        if (!currentAccount) return;
+
+        const blob = new Blob([JSON.stringify(currentAccount, null, 2)], { type: 'application/json' });
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = 'mailtm_account.json';
+        link.click();
+        URL.revokeObjectURL(url);
+    };
+
+    return {
+        destroy() {
+            if (rootClickHandler) root.removeEventListener('click', rootClickHandler);
+            rootClickHandler = null;
         }
     };
 }
 
 async function createMailAccount() {
-    // Đăng ký tài khoản mới
-    const domainRes = await fetch('https://api.mail.tm/domains');
-    const domains = (await domainRes.json())["hydra:member"];
-    const domain = domains[0].domain;
-    const username = Math.random().toString(36).substring(2, 10);
-    const address = `${username}@${domain}`;
-    const password = Math.random().toString(36).substring(2, 12);
-    // Tạo account
-    const res = await fetch('https://api.mail.tm/accounts', {
-        method: 'POST',
-        headers: {'Content-Type': 'application/json'},
-        body: JSON.stringify({address, password})
-    });
-    if (!res.ok) {
-        document.getElementById('mailInfo').textContent = 'Tạo tài khoản thất bại!';
-        return;
+    const mailInfo = document.getElementById('mailInfo');
+
+    try {
+        const domainRes = await fetch(`${API_BASE_URL}/domains`);
+        if (!domainRes.ok) throw new Error('Khong lay duoc domain Mail.tm');
+
+        const domains = (await domainRes.json())['hydra:member'] || [];
+        const domain = domains[0]?.domain;
+        if (!domain) throw new Error('Mail.tm khong tra ve domain hop le');
+
+        const username = cryptoRandomString(10);
+        const password = cryptoRandomString(16);
+        const address = `${username}@${domain}`;
+
+        const accountRes = await fetch(`${API_BASE_URL}/accounts`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ address, password })
+        });
+        if (!accountRes.ok) throw new Error('Tao tai khoan that bai');
+
+        const tokenRes = await fetch(`${API_BASE_URL}/token`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ address, password })
+        });
+        if (!tokenRes.ok) throw new Error('Dang nhap Mail.tm that bai');
+
+        const tokenData = await tokenRes.json();
+        currentAccount = { address, password, token: tokenData.token };
+        currentToken = tokenData.token;
+        localStorage.setItem(ACCOUNT_STORAGE_KEY, JSON.stringify(currentAccount));
+
+        showAccountInfo();
+        fetchAndShowMails();
+    } catch (error) {
+        if (mailInfo) mailInfo.textContent = error.message || 'Tao tai khoan that bai!';
     }
-    // Đăng nhập lấy token
-    const tokenRes = await fetch('https://api.mail.tm/token', {
-        method: 'POST',
-        headers: {'Content-Type': 'application/json'},
-        body: JSON.stringify({address, password})
-    });
-    const tokenData = await tokenRes.json();
-    currentAccount = {address, password, token: tokenData.token};
-    currentToken = tokenData.token;
-    localStorage.setItem('mailtm_account', JSON.stringify(currentAccount));
-    showAccountInfo();
-    fetchAndShowMails();
 }
 
 function showAccountInfo() {
     const mailInfo = document.getElementById('mailInfo');
     const downloadBtn = document.getElementById('downloadMailBtn');
-    if (currentAccount) {
-        mailInfo.innerHTML = `<b>Mail ảo:</b> ${currentAccount.address}<br><b>Password:</b> ${currentAccount.password}`;
-        mailInfo.style.display = 'block';
-        downloadBtn.style.display = 'block';
-    }
+    if (!mailInfo || !downloadBtn || !currentAccount) return;
+
+    clearElement(mailInfo);
+    mailInfo.append(
+        createElement('b', { text: 'Mail ao: ' }),
+        document.createTextNode(currentAccount.address),
+        createElement('br'),
+        createElement('b', { text: 'Password: ' }),
+        document.createTextNode(currentAccount.password)
+    );
+    mailInfo.style.display = 'block';
+    downloadBtn.style.display = 'block';
 }
 
 async function fetchAndShowMails() {
     const mailList = document.getElementById('mailList');
-    mailList.innerHTML = 'Đang tải mail...';
-    if (!currentToken) return;
-    const res = await fetch('https://api.mail.tm/messages', {
-        headers: {Authorization: `Bearer ${currentToken}`}
-    });
-    const data = await res.json();
-    if (!data['hydra:member'] || data['hydra:member'].length === 0) {
-        mailList.innerHTML = '<i>Chưa có mail nào.</i>';
-        return;
+    if (!mailList || !currentToken) return;
+
+    mailList.textContent = 'Dang tai mail...';
+
+    try {
+        const res = await fetch(`${API_BASE_URL}/messages`, {
+            headers: { Authorization: `Bearer ${currentToken}` }
+        });
+        if (!res.ok) throw new Error('Khong lay duoc danh sach mail');
+
+        const data = await res.json();
+        const mails = data['hydra:member'] || [];
+        clearElement(mailList);
+
+        if (mails.length === 0) {
+            mailList.appendChild(createElement('i', { text: 'Chua co mail nao.' }));
+            return;
+        }
+
+        mailList.append(...mails.map(createMailCard));
+    } catch (error) {
+        mailList.textContent = error.message || 'Khong tai duoc mail.';
     }
-    mailList.innerHTML = data['hydra:member'].map(m =>
-        `<div style="background: var(--bg-color); border: 1px solid var(--border-color); padding: 10px; border-radius: 8px; display: flex; flex-direction: column; gap: 5px;">
-            <div style="font-weight: 600; font-size: 0.9rem; color: var(--accent-color); white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${m.from && m.from.address ? m.from.address : ''}</div>
-            <div style="font-size: 0.85rem; color: var(--text-primary); white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${m.subject}</div>
-            <button class="viewMailBtn" data-mailid="${m.id}" style="margin-top: 5px; padding: 5px; font-size: 0.8rem; background: var(--hover-bg); color: var(--text-primary); border: 1px solid var(--border-color);">Xem nội dung</button>
-        </div>`
-    ).join('');
 }
 
-// Hàm toàn cục để xem nội dung mail
+function createMailCard(mail) {
+    const viewButton = createElement('button', {
+        className: 'viewMailBtn',
+        text: 'Xem noi dung',
+        dataset: { mailId: mail.id },
+        styles: {
+            marginTop: '5px',
+            padding: '5px',
+            fontSize: '0.8rem',
+            background: 'var(--hover-bg)',
+            color: 'var(--text-primary)',
+            border: '1px solid var(--border-color)'
+        }
+    });
+
+    return createElement('div', {
+        styles: {
+            background: 'var(--bg-color)',
+            border: '1px solid var(--border-color)',
+            padding: '10px',
+            borderRadius: '8px',
+            display: 'flex',
+            flexDirection: 'column',
+            gap: '5px'
+        },
+        children: [
+            createElement('div', {
+                text: mail.from?.address || '',
+                styles: {
+                    fontWeight: '600',
+                    fontSize: '0.9rem',
+                    color: 'var(--accent-color)',
+                    whiteSpace: 'nowrap',
+                    overflow: 'hidden',
+                    textOverflow: 'ellipsis'
+                }
+            }),
+            createElement('div', {
+                text: mail.subject || '(Khong tieu de)',
+                styles: {
+                    fontSize: '0.85rem',
+                    color: 'var(--text-primary)',
+                    whiteSpace: 'nowrap',
+                    overflow: 'hidden',
+                    textOverflow: 'ellipsis'
+                }
+            }),
+            viewButton
+        ]
+    });
+}
+
 async function showMailTmContent(id) {
     if (!currentToken) return;
-    const res = await fetch(`https://api.mail.tm/messages/${id}`, {
-        headers: {Authorization: `Bearer ${currentToken}`}
-    });
-    const data = await res.json();
-    // Hiển thị nội dung mail trong modal
-    const mailModal = document.getElementById('mailModal');
-    const modalMailSubject = document.getElementById('modalMailSubject');
-    const modalMailFrom = document.getElementById('modalMailFrom');
-    const modalMailText = document.getElementById('modalMailText');
-    if (mailModal && modalMailSubject && modalMailFrom && modalMailText) {
-        modalMailSubject.textContent = data.subject || '(Không tiêu đề)';
-        modalMailFrom.textContent = data.from && data.from.address ? 'Từ: ' + data.from.address : '';
+
+    try {
+        const res = await fetch(`${API_BASE_URL}/messages/${encodeURIComponent(id)}`, {
+            headers: { Authorization: `Bearer ${currentToken}` }
+        });
+        if (!res.ok) throw new Error('Khong doc duoc mail');
+
+        const data = await res.json();
+        const mailModal = document.getElementById('mailModal');
+        const modalMailSubject = document.getElementById('modalMailSubject');
+        const modalMailFrom = document.getElementById('modalMailFrom');
+        const modalMailText = document.getElementById('modalMailText');
+        if (!mailModal || !modalMailSubject || !modalMailFrom || !modalMailText) return;
+
+        modalMailSubject.textContent = data.subject || '(Khong tieu de)';
+        modalMailFrom.textContent = data.from?.address ? `Tu: ${data.from.address}` : '';
         modalMailText.textContent = data.text || '';
         mailModal.style.display = 'flex';
+    } catch (error) {
+        const mailList = document.getElementById('mailList');
+        if (mailList) mailList.textContent = error.message || 'Khong doc duoc mail.';
     }
-};
+}
+
+function loadSavedAccount() {
+    try {
+        return JSON.parse(localStorage.getItem(ACCOUNT_STORAGE_KEY) || 'null');
+    } catch {
+        localStorage.removeItem(ACCOUNT_STORAGE_KEY);
+        return null;
+    }
+}
+
+function cryptoRandomString(length) {
+    const alphabet = 'abcdefghijklmnopqrstuvwxyz0123456789';
+    const bytes = new Uint8Array(length);
+    globalThis.crypto.getRandomValues(bytes);
+    return Array.from(bytes, byte => alphabet[byte % alphabet.length]).join('');
+}

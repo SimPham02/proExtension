@@ -3,20 +3,14 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Tab Mới</title>
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+    <title>Tab mới</title>
     <link rel="stylesheet" href="newtab.css">
+    <script defer src="../../common/icons.js"></script>
 </head>
 <body>
-    <!-- Background Animation -->
     <div class="bg-gradient"></div>
-    
-    <!-- Main Container -->
+
     <main class="container">
-        <!-- Header: Date & Weather -->
         <header class="header">
             <div class="date-info">
                 <span class="day" id="day">Thứ Hai</span>
@@ -29,13 +23,11 @@
             </div>
         </header>
 
-        <!-- Clock Section -->
         <section class="clock-section" id="clock-section">
             <div class="time" id="time">00:00</div>
             <div class="greeting" id="greeting">Xin chào!</div>
         </section>
 
-        <!-- Search Box -->
         <section class="search-section" id="search-section">
             <form class="search-box" id="search-form">
                 <div class="search-input-wrapper">
@@ -59,7 +51,6 @@
             </form>
         </section>
 
-        <!-- Quick Links / Shortcuts -->
         <section class="shortcuts-section" id="shortcuts-section">
             <div class="shortcuts-header">
                 <div class="header-left">
@@ -76,13 +67,14 @@
             </div>
         </section>
 
-        <!-- Folder Expanded View -->
         <div id="folder-view" class="folder-view">
             <div class="folder-view-overlay"></div>
             <div class="folder-view-content">
                 <div class="folder-header">
                     <h2 id="folder-name-display">Tên thư mục</h2>
-                    <button id="edit-folder-name" class="edit-folder-btn" title="Sửa tên thư mục"><i class="fa-solid fa-pencil"></i></button>
+                    <button id="edit-folder-name" class="edit-folder-btn" title="Sửa tên thư mục">
+                        <i class="fa-solid fa-pencil"></i>
+                    </button>
                 </div>
                 <div id="folder-grid" class="shortcuts-grid">
                     <!-- Folder items here -->
@@ -90,7 +82,6 @@
             </div>
         </div>
 
-        <!-- Calendar Modal -->
         <div id="calendar-modal" class="modal">
             <div class="modal-overlay"></div>
             <div class="modal-content calendar-content">
@@ -111,7 +102,6 @@
             </div>
         </div>
 
-        <!-- AI Tools -->
         <section class="ai-section" id="ai-section">
             <div class="ai-header">Công cụ AI</div>
             <div class="ai-grid">
@@ -138,29 +128,12 @@
             </div>
         </section>
 
-    <!-- Quote -->
-    <section class="quote-section" id="quote-section">
-        <p class="quote-text" id="quote-text">"Hãy bắt đầu ngày mới với năng lượng tích cực!"</p>
-        <span class="quote-author" id="quote-author">— Pro Extensions</span>
-    </section>
-</main>
+        <section class="quote-section" id="quote-section">
+            <p class="quote-text" id="quote-text">"Hãy bắt đầu ngày mới với năng lượng tích cực!"</p>
+            <span class="quote-author" id="quote-author">- Pro Extensions</span>
+        </section>
+    </main>
 
-<!-- Folder Expanded View -->
-<div id="folder-view" class="folder-view">
-    <div class="folder-view-overlay"></div>
-    <div class="folder-view-content">
-        <div class="folder-header">
-            <h2 id="folder-name-display">Tên thư mục</h2>
-            <button id="edit-folder-name" class="edit-folder-btn"><i class="fa-solid fa-pen"></i></button>
-        </div>
-        <div id="folder-grid" class="shortcuts-grid">
-            <!-- Folder items here -->
-        </div>
-    </div>
-</div>
-
-
-    <!-- Floating Buttons -->
     <div class="fab-group">
         <button class="fab" id="todo-fab" title="Việc cần làm">
             <i class="fa-solid fa-list-check"></i>
@@ -170,13 +143,30 @@
         </button>
     </div>
 
-    <!-- Settings Modal (loaded dynamically from ui.html) -->
+    <aside class="todo-panel" id="todo-panel" aria-label="Việc cần làm">
+        <div class="todo-header">
+            <h3>Việc cần làm</h3>
+            <button class="close-todo" id="close-todo" type="button" title="Đóng">
+                <i class="fa-solid fa-xmark"></i>
+            </button>
+        </div>
+        <form class="todo-input" id="todo-form">
+            <input id="todo-input" type="text" maxlength="120" placeholder="Thêm việc cần làm..." autocomplete="off">
+            <button type="submit" title="Thêm">
+                <i class="fa-solid fa-plus"></i>
+            </button>
+        </form>
+        <div class="todo-list" id="todo-list"></div>
+        <div class="todo-footer">
+            <span id="todo-count">0 việc</span>
+        </div>
+    </aside>
+
     <div class="modal" id="settings-modal">
         <div class="modal-overlay"></div>
         <div class="modal-box" id="settings-container"></div>
     </div>
 
-    <!-- Add Shortcut Modal -->
     <div class="modal" id="shortcut-modal">
         <div class="modal-overlay"></div>
         <div class="modal-box">

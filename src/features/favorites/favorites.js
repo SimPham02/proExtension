@@ -8,13 +8,43 @@ let currentNodes = [];
 let selectedIds = new Set();
 let currentSearchMode = 'flat'; 
 
+function el(tagName, options = {}) {
+    const node = document.createElement(tagName);
+    if (options.className) node.className = options.className;
+    if (options.text !== undefined) node.textContent = options.text;
+    if (options.attributes) {
+        Object.entries(options.attributes).forEach(([name, value]) => {
+            if (value !== undefined && value !== null) node.setAttribute(name, String(value));
+        });
+    }
+    if (options.styles) Object.assign(node.style, options.styles);
+    if (options.children) node.append(...options.children.filter(Boolean));
+    return node;
+}
+
 function getFavicon(url) {
     try {
         const domain = new URL(url).hostname;
-        return `https://www.google.com/s2/favicons?domain=${domain}&sz=128`;
+        return createLetterIcon(domain);
     } catch (e) {
-        return 'https://www.google.com/s2/favicons?domain=google.com&sz=128';
+        return createLetterIcon('bookmark');
     }
+}
+
+function createLetterIcon(label) {
+    const text = escapeSvgText(String(label || '?').replace(/^www\./, '').trim().charAt(0).toUpperCase() || '?');
+    const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="128" height="128" viewBox="0 0 128 128"><rect width="128" height="128" rx="28" fill="#334155"/><text x="64" y="82" text-anchor="middle" font-family="Arial,sans-serif" font-size="56" font-weight="700" fill="#38bdf8">${text}</text></svg>`;
+    return `data:image/svg+xml;charset=UTF-8,${encodeURIComponent(svg)}`;
+}
+
+function escapeSvgText(value) {
+    return value.replace(/[&<>"']/g, char => ({
+        '&': '&amp;',
+        '<': '&lt;',
+        '>': '&gt;',
+        '"': '&quot;',
+        "'": '&apos;'
+    }[char]));
 }
 
 function toggleSelection(id, e) {
@@ -45,31 +75,51 @@ function createCard(node) {
     if (!isFolder) {
         card.href = node.url;
         card.target = '_blank';
+        card.rel = 'noopener noreferrer';
     }
 
     const isSelected = selectedIds.has(node.id);
     if (isSelected) card.classList.add('selected');
 
-    card.innerHTML = `
-        <div class="selection-indicator ${isSelected ? 'active' : ''}">
-            <i class="fa-solid fa-check"></i>
-        </div>
-        ${!isFolder ? `<div class="bookmark-tooltip">${node.title}</div>` : ''}
-        ${isFolder ? '<i class="fa-solid fa-folder"></i>' : ''}
-        <div class="${isFolder ? 'card-info' : 'card-top'}">
-            ${!isFolder ? `
-                <div class="favicon-box">
-                    <img src="${getFavicon(node.url)}" alt="" onerror="this.src='https://www.google.com/s2/favicons?domain=example.com'">
-                </div>
-            ` : ''}
-            <div class="card-info">
-                <div class="card-title">${node.title || 'Untitled'}</div>
-                <div class="card-url">${isFolder ? (node.children ? node.children.length : '0') + ' items' : node.url}</div>
-            </div>
-        </div>
-    `;
+    const selectionBtn = el('div', {
+        className: `selection-indicator ${isSelected ? 'active' : ''}`,
+        children: [el('i', { className: 'fa-solid fa-check' })]
+    });
+    card.appendChild(selectionBtn);
 
-    const selectionBtn = card.querySelector('.selection-indicator');
+    if (!isFolder) {
+        card.appendChild(el('div', {
+            className: 'bookmark-tooltip',
+            text: node.title || 'Untitled'
+        }));
+    }
+
+    if (isFolder) {
+        card.appendChild(el('i', { className: 'fa-solid fa-folder' }));
+    }
+
+    const content = el('div', { className: isFolder ? 'card-info' : 'card-top' });
+    if (!isFolder) {
+        const favicon = el('img', { attributes: { src: getFavicon(node.url), alt: '' } });
+        favicon.onerror = () => { favicon.src = createLetterIcon(node.title || 'bookmark'); };
+        content.appendChild(el('div', {
+            className: 'favicon-box',
+            children: [favicon]
+        }));
+    }
+
+    content.appendChild(el('div', {
+        className: 'card-info',
+        children: [
+            el('div', { className: 'card-title', text: node.title || 'Untitled' }),
+            el('div', {
+                className: 'card-url',
+                text: isFolder ? `${node.children ? node.children.length : 0} items` : node.url
+            })
+        ]
+    }));
+    card.appendChild(content);
+
     selectionBtn.onclick = (e) => {
         e.stopPropagation();
         e.preventDefault();
@@ -205,9 +255,13 @@ function renderBookmarks(nodes, isSearch = false) {
         });
 
         Object.keys(groups).forEach(groupName => {
-            const header = document.createElement('div');
-            header.className = 'search-group-header';
-            header.innerHTML = `<i class="fa-solid fa-folder-open"></i> ${groupName}`;
+            const header = el('div', {
+                className: 'search-group-header',
+                children: [
+                    el('i', { className: 'fa-solid fa-folder-open' }),
+                    document.createTextNode(` ${groupName}`)
+                ]
+            });
             grid.appendChild(header);
 
             groups[groupName].forEach(node => {
@@ -236,11 +290,19 @@ function buildTree(nodes, container, depth = 0) {
             
             const hasSubFolders = node.children.some(c => c.children);
             
-            div.innerHTML = `
-                ${hasSubFolders ? '<i class="fa-solid fa-chevron-right chevron"></i>' : '<i class="fa-solid fa-minus" style="font-size:0.5rem; width:12px; opacity:0.3"></i>'}
-                <i class="fa-solid fa-folder" style="color: #eab308"></i>
-                <span>${node.title || 'Untitled'}</span>
-            `;
+            div.append(
+                hasSubFolders
+                    ? el('i', { className: 'fa-solid fa-chevron-right chevron' })
+                    : el('i', {
+                        className: 'fa-solid fa-minus',
+                        styles: { fontSize: '0.5rem', width: '12px', opacity: '0.3' }
+                    }),
+                el('i', {
+                    className: 'fa-solid fa-folder',
+                    styles: { color: '#eab308' }
+                }),
+                el('span', { text: node.title || 'Untitled' })
+            );
             
             const subTreeContainer = document.createElement('div');
             subTreeContainer.className = 'sub-tree';
@@ -338,6 +400,7 @@ function init() {
                     a.href = url;
                     a.download = 'bookmarks_backup.json';
                     a.click();
+                    URL.revokeObjectURL(url);
                 };
             }
 

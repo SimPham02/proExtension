@@ -18,6 +18,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     let currentOrder = [];
     let draggedItem = null;
+    let currentFeatureController = null;
 
     // Event delegation for header buttons
     document.querySelector('header')?.addEventListener('click', e => {
@@ -70,13 +71,19 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Back button
     $('back-to-grid')?.addEventListener('click', () => {
+        destroyCurrentFeature();
         featureView.style.display = 'none';
         mainView.style.display = 'block';
         featureContent.classList.remove('active');
-        featureContent.innerHTML = '';
+        featureContent.replaceChildren();
         const existingStyle = document.getElementById('feature-style');
         if (existingStyle) existingStyle.remove();
     });
+
+    function destroyCurrentFeature() {
+        currentFeatureController?.destroy?.();
+        currentFeatureController = null;
+    }
 
     function openSettings() {
         settingsPanel.classList.add('active');
@@ -151,6 +158,7 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     async function loadFeature(feature) {
+        destroyCurrentFeature();
         featureContent.innerHTML = '<div style="text-align:center;padding:20px"><i class="fa-solid fa-circle-notch fa-spin"></i></div>';
         mainView.style.display = 'none';
         featureView.style.display = 'block';
@@ -171,7 +179,8 @@ document.addEventListener('DOMContentLoaded', () => {
                 document.head.appendChild(link);
             }
             featureContent.innerHTML = html;
-            logic?.init?.() || logic?.initUI?.();
+            const initializer = logic?.init || logic?.initUI;
+            currentFeatureController = initializer ? await initializer() : null;
         } catch (e) {
             featureContent.innerHTML = `<div style="color:#ef4444;padding:10px">Error: ${e.message}</div>`;
         }
