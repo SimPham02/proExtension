@@ -14,6 +14,13 @@ const CONFIG = {
             description: 'Tối, sắc nét, xanh terminal',
             icon: 'fa-terminal',
             defaultBackground: 'linear-gradient(135deg, #07130f 0%, #0d1f1a 45%, #111827 100%)'
+        },
+        {
+            id: 'studio',
+            name: 'Studio Focus',
+            description: 'Tối, gọn, dạng studio tập trung',
+            icon: 'fa-table-columns',
+            defaultBackground: 'linear-gradient(135deg, #0f1720 0%, #18232d 48%, #152823 100%)'
         }
     ],
     engines: {
@@ -1143,29 +1150,25 @@ async function openSettings() {
 
 async function initBackgroundSettings(root) {
     const bgTypeBtns = root.querySelectorAll('.bg-type-btn');
-    const bgPanels = root.querySelectorAll('.bg-options-panel');
     
     // Type switching
     bgTypeBtns.forEach(btn => {
         btn.addEventListener('click', () => {
-            bgTypeBtns.forEach(b => b.classList.remove('active'));
-            bgPanels.forEach(p => p.classList.remove('active'));
-            btn.classList.add('active');
-            root.querySelector(`#bg-panel-${btn.dataset.bgType}`).classList.add('active');
+            setActiveBackgroundPanel(root, btn.dataset.bgType);
         });
     });
 
     // Generate Gradients
     const gradients = [
-        'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-        'linear-gradient(135deg, #6366f1 0%, #a855f7 100%)',
-        'linear-gradient(to right, #4facfe 0%, #00f2fe 100%)',
-        'linear-gradient(to top, #30cfd0 0%, #330867 100%)',
-        'linear-gradient(120deg, #f093fb 0%, #f5576c 100%)',
-        'linear-gradient(to right, #43e97b 0%, #38f9d7 100%)',
-        'linear-gradient(to top, #5ee7df 0%, #b490ca 100%)',
-        'linear-gradient(to top, #9890e3 0%, #b1f4cf 100%)',
-        'radial-gradient(circle at 15% 15%, rgba(99, 102, 241, 0.12) 0%, transparent 50%), radial-gradient(circle at 85% 85%, rgba(236, 72, 153, 0.1) 0%, transparent 50%), radial-gradient(circle at 50% 50%, rgba(14, 165, 233, 0.08) 0%, transparent 60%)' // Default
+        'linear-gradient(135deg, #1f2147 0%, #4b3f74 100%)',
+        'linear-gradient(135deg, #12213a 0%, #253b63 100%)',
+        'linear-gradient(135deg, #0f2a2a 0%, #28506a 100%)',
+        'linear-gradient(to top, #1b2438 0%, #0a111d 100%)',
+        'linear-gradient(120deg, #3b1f3f 0%, #7a3049 100%)',
+        'linear-gradient(to right, #173d2f 0%, #1f6b63 100%)',
+        'linear-gradient(to top, #1f2a4d 0%, #51466f 100%)',
+        'linear-gradient(to top, #2b2540 0%, #1a1c30 100%)',
+        'radial-gradient(circle at 15% 15%, rgba(37, 99, 235, 0.18) 0%, transparent 46%), radial-gradient(circle at 85% 85%, rgba(16, 185, 129, 0.12) 0%, transparent 42%), radial-gradient(circle at 50% 50%, rgba(99, 102, 241, 0.12) 0%, transparent 58%)' // Default
     ];
     
     const gradientGrid = root.querySelector('#gradient-grid');
@@ -1201,6 +1204,16 @@ async function initBackgroundSettings(root) {
 
 }
 
+function setActiveBackgroundPanel(root, type) {
+    const nextType = type || 'gradient';
+    root.querySelectorAll('.bg-type-btn').forEach(btn => {
+        btn.classList.toggle('active', btn.dataset.bgType === nextType);
+    });
+    root.querySelectorAll('.bg-options-panel').forEach(panel => {
+        panel.classList.toggle('active', panel.id === `bg-panel-${nextType}`);
+    });
+}
+
 function selectBackground(root, type, value, element) {
     // Visual selection
     root.querySelectorAll('.color-swatch').forEach(el => el.classList.remove('active'));
@@ -1224,6 +1237,7 @@ function collectSettingsFrom(root) {
     const activeTab = root.querySelector('.bg-type-btn.active');
     if (activeTab && activeTab.dataset.bgType === 'slideshow') {
         bgType = 'slideshow';
+        bgValue = state.settings.bgValue;
     }
 
     return {
@@ -1261,27 +1275,30 @@ function populateSettingsInputs(root) {
 
 
     // Populate Background
-    if (s.bgType) {
-        const typeBtn = root.querySelector(`.bg-type-btn[data-bg-type="${s.bgType}"]`);
-        if (typeBtn) typeBtn.click();
-        
-        if (s.bgType === 'image' && s.bgValue) {
+    const bgType = s.bgType || 'gradient';
+    setActiveBackgroundPanel(root, bgType);
+    root.querySelectorAll('.color-swatch').forEach(sw => sw.classList.remove('active'));
+
+    if (s.bgValue) {
+        if (bgType === 'image') {
             // Set dataset for image selection (gallery will show as active)
-            root.dataset.selectedBgType = s.bgType;
+            root.dataset.selectedBgType = bgType;
             root.dataset.selectedBgValue = s.bgValue;
-        } else if (s.bgValue) {
+        } else {
             // Highlight swatch by comparing raw data-bg-value (for both solid and gradient)
-            const swatches = root.querySelectorAll('.color-swatch');
-            swatches.forEach(sw => {
-                // Compare as string, ignore whitespace
-                if ((sw.dataset.bgValue || '').replace(/\s+/g, '') === (s.bgValue || '').replace(/\s+/g, '')) {
+            const currentValue = (s.bgValue || '').replace(/\s+/g, '');
+            root.querySelectorAll('.color-swatch').forEach(sw => {
+                if ((sw.dataset.bgValue || '').replace(/\s+/g, '') === currentValue) {
                     sw.classList.add('active');
                 }
             });
         }
-        
-        root.dataset.selectedBgType = s.bgType;
+
+        root.dataset.selectedBgType = bgType;
         root.dataset.selectedBgValue = s.bgValue;
+    } else {
+        delete root.dataset.selectedBgType;
+        delete root.dataset.selectedBgValue;
     }
 }
 

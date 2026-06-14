@@ -62,6 +62,30 @@ body[data-theme="linux"] {
     --radius-xl: 20px;
 }
 
+body[data-theme="studio"] {
+    --bg-primary: #0f1720;
+    --bg-secondary: #18232d;
+    --bg-card: rgba(18, 28, 36, 0.82);
+    --bg-card-hover: rgba(26, 40, 50, 0.92);
+    --bg-glass: rgba(13, 22, 29, 0.78);
+    --text-primary: #eef6f4;
+    --text-secondary: rgba(238, 246, 244, 0.82);
+    --text-muted: rgba(238, 246, 244, 0.52);
+    --accent: #2dd4bf;
+    --accent-glow: rgba(45, 212, 191, 0.22);
+    --accent-light: #60a5fa;
+    --border: rgba(148, 163, 184, 0.16);
+    --border-hover: rgba(96, 165, 250, 0.3);
+    --shadow-sm: 0 10px 28px rgba(0, 0, 0, 0.24);
+    --shadow-md: 0 18px 44px rgba(0, 0, 0, 0.32);
+    --shadow-lg: 0 28px 64px rgba(0, 0, 0, 0.42);
+    --shadow-glow: 0 0 26px rgba(45, 212, 191, 0.2);
+    --radius-sm: 12px;
+    --radius-md: 18px;
+    --radius-lg: 24px;
+    --radius-xl: 32px;
+}
+
 /* Light Mode */
 @media (prefers-color-scheme: light) {
     :root {
@@ -157,6 +181,17 @@ body[data-theme="linux"] .bg-gradient {
     opacity: 0.7;
 }
 
+body[data-theme="studio"] .bg-gradient {
+    background:
+        linear-gradient(135deg, rgba(45, 212, 191, 0.08) 0%, transparent 38%),
+        linear-gradient(315deg, transparent 0%, rgba(96, 165, 250, 0.08) 100%),
+        linear-gradient(90deg, rgba(148, 163, 184, 0.045) 1px, transparent 1px),
+        linear-gradient(180deg, rgba(148, 163, 184, 0.035) 1px, transparent 1px);
+    background-size: auto, auto, 56px 56px, 56px 56px;
+    filter: none;
+    opacity: 0.82;
+}
+
 body[data-theme="linux"] .container {
     max-width: 1040px;
 }
@@ -217,6 +252,291 @@ body[data-theme="linux"] .container {
         "quote shortcuts";
     gap: 22px 28px;
     align-content: start;
+}
+
+body[data-theme="studio"] {
+    color-scheme: dark;
+}
+
+body[data-theme="studio"] .container {
+    max-width: 1160px;
+    padding: 30px 28px 48px;
+    display: grid;
+    grid-template-columns: minmax(0, 1.15fr) minmax(280px, 0.85fr);
+    grid-template-areas:
+        "header header"
+        "clock shortcuts"
+        "search shortcuts"
+        "ai quote";
+    gap: 20px 24px;
+    align-content: start;
+}
+
+body[data-theme="studio"] .header {
+    grid-area: header;
+    padding: 0 4px;
+    align-items: flex-start;
+}
+
+body[data-theme="studio"] .date-info {
+    position: relative;
+    padding: 14px 18px 14px 20px;
+    border-radius: 22px;
+    background: rgba(18, 28, 36, 0.82);
+    border: 1px solid rgba(148, 163, 184, 0.16);
+    box-shadow: var(--shadow-sm);
+}
+
+body[data-theme="studio"] .date-info::before {
+    content: '';
+    position: absolute;
+    top: 14px;
+    left: 10px;
+    width: 4px;
+    height: calc(100% - 28px);
+    border-radius: 999px;
+    background: linear-gradient(180deg, #2dd4bf, #60a5fa);
+}
+
+body[data-theme="studio"] .day {
+    font-size: 12px;
+    letter-spacing: 1.2px;
+    color: var(--accent);
+}
+
+body[data-theme="studio"] .full-date {
+    font-size: 15px;
+    color: rgba(238, 246, 244, 0.68);
+}
+
+body[data-theme="studio"] .clock-section,
+body[data-theme="studio"] .search-section,
+body[data-theme="studio"] .ai-section,
+body[data-theme="studio"] .quote-section,
+body[data-theme="studio"] .shortcuts-section {
+    animation: none;
+    border: 1px solid rgba(148, 163, 184, 0.16);
+    background: rgba(18, 28, 36, 0.8);
+    box-shadow: var(--shadow-sm);
+    backdrop-filter: blur(12px);
+}
+
+body[data-theme="studio"] .clock-section {
+    grid-area: clock;
+    padding: 24px 28px;
+    border-radius: 28px;
+    text-align: left;
+}
+
+body[data-theme="studio"] .time {
+    font-size: clamp(40px, 5.6vw, 60px);
+    letter-spacing: 0;
+    background: none;
+    -webkit-text-fill-color: currentColor;
+    color: var(--text-primary);
+    filter: none;
+}
+
+body[data-theme="studio"] .greeting {
+    margin-top: 4px;
+    color: rgba(238, 246, 244, 0.68);
+}
+
+body[data-theme="studio"] .search-section {
+    grid-area: search;
+    width: 100%;
+    max-width: none;
+    margin: 0;
+    padding: 16px;
+    border-radius: 26px;
+    z-index: 10;
+}
+
+body[data-theme="studio"] .search-box {
+    gap: 0;
+}
+
+body[data-theme="studio"] .search-input-wrapper {
+    min-height: 62px;
+    padding: 6px 10px 6px 8px;
+    border-radius: 20px;
+    background: rgba(11, 19, 26, 0.86);
+    border: 1px solid rgba(148, 163, 184, 0.18);
+    box-shadow: inset 0 1px 0 rgba(238, 246, 244, 0.06);
+}
+
+body[data-theme="studio"] .engine-dropbtn,
+body[data-theme="studio"] .voice-btn,
+body[data-theme="studio"] .image-btn {
+    background: rgba(30, 43, 54, 0.9);
+    color: var(--text-secondary);
+}
+
+body[data-theme="studio"] .engine-dropbtn:hover,
+body[data-theme="studio"] .voice-btn:hover,
+body[data-theme="studio"] .image-btn:hover {
+    background: rgba(45, 212, 191, 0.12);
+    color: var(--accent-light);
+}
+
+body[data-theme="studio"] .engine-dropdown-content {
+    background: rgba(15, 24, 32, 0.98);
+    border: 1px solid rgba(148, 163, 184, 0.16);
+    box-shadow: 0 16px 36px rgba(0, 0, 0, 0.34);
+}
+
+body[data-theme="studio"] .engine-item:hover {
+    background: rgba(96, 165, 250, 0.12);
+}
+
+body[data-theme="studio"] .engine-item.active {
+    background: rgba(45, 212, 191, 0.14);
+    border: 1px solid rgba(45, 212, 191, 0.24);
+}
+
+body[data-theme="studio"] #search-input {
+    color: var(--text-primary);
+}
+
+body[data-theme="studio"] #search-input::placeholder {
+    color: rgba(238, 246, 244, 0.42);
+}
+
+body[data-theme="studio"] .shortcuts-section {
+    grid-area: shortcuts;
+    padding: 18px 18px 10px;
+    border-radius: 28px;
+}
+
+body[data-theme="studio"] .shortcuts-header {
+    margin-bottom: 10px;
+    padding: 0 4px;
+}
+
+body[data-theme="studio"] .shortcuts-header span,
+body[data-theme="studio"] .ai-header {
+    color: var(--text-primary);
+}
+
+body[data-theme="studio"] .add-shortcut-btn {
+    border-style: solid;
+    border-color: rgba(96, 165, 250, 0.2);
+    background: rgba(96, 165, 250, 0.08);
+    color: var(--accent-light);
+}
+
+body[data-theme="studio"] .add-shortcut-btn:hover {
+    background: rgba(45, 212, 191, 0.12);
+    border-color: rgba(45, 212, 191, 0.28);
+}
+
+body[data-theme="studio"] .shortcuts-container-scroll {
+    max-height: 420px;
+    padding-right: 4px;
+}
+
+body[data-theme="studio"] .shortcuts-grid {
+    gap: 18px;
+    padding: 14px 0 18px;
+}
+
+body[data-theme="studio"] .shortcut {
+    border-radius: 22px;
+}
+
+body[data-theme="studio"] .shortcut:hover {
+    background: rgba(30, 43, 54, 0.9);
+    box-shadow: 0 16px 28px rgba(0, 0, 0, 0.28);
+}
+
+body[data-theme="studio"] .shortcut-icon {
+    background: linear-gradient(135deg, rgba(45, 212, 191, 0.18), rgba(96, 165, 250, 0.14));
+    border-color: rgba(148, 163, 184, 0.16);
+    box-shadow: 0 10px 22px rgba(0, 0, 0, 0.22);
+}
+
+body[data-theme="studio"] .shortcut-name {
+    color: var(--text-secondary);
+}
+
+body[data-theme="studio"] .ai-section {
+    grid-area: ai;
+    padding: 20px;
+    border-radius: 28px;
+}
+
+body[data-theme="studio"] .ai-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 12px;
+}
+
+body[data-theme="studio"] .ai-card {
+    min-height: 84px;
+    border-radius: 20px;
+    background: rgba(13, 22, 29, 0.76);
+    border: 1px solid rgba(148, 163, 184, 0.14);
+    box-shadow: none;
+}
+
+body[data-theme="studio"] .ai-card:hover {
+    background: rgba(26, 40, 50, 0.94);
+    border-color: rgba(96, 165, 250, 0.24);
+    transform: translateY(-3px);
+}
+
+body[data-theme="studio"] .quote-section {
+    grid-area: quote;
+    margin-top: 0;
+    padding: 24px 22px;
+    border-radius: 28px;
+    text-align: left;
+    align-self: stretch;
+}
+
+body[data-theme="studio"] .quote-text {
+    color: var(--text-secondary);
+    font-size: 17px;
+}
+
+body[data-theme="studio"] .quote-author {
+    color: #fb923c;
+}
+
+@media (max-width: 980px) {
+    body[data-theme="studio"] .container {
+        grid-template-columns: 1fr;
+        grid-template-areas:
+            "header"
+            "clock"
+            "search"
+            "shortcuts"
+            "ai"
+            "quote";
+        padding: 24px 20px 36px;
+        gap: 18px;
+    }
+
+    body[data-theme="studio"] .shortcuts-container-scroll {
+        max-height: 360px;
+    }
+}
+
+@media (max-width: 640px) {
+    body[data-theme="studio"] .clock-section,
+    body[data-theme="studio"] .search-section,
+    body[data-theme="studio"] .ai-section,
+    body[data-theme="studio"] .quote-section,
+    body[data-theme="studio"] .shortcuts-section {
+        border-radius: 22px;
+    }
+
+    body[data-theme="studio"] .clock-section {
+        padding: 20px 18px;
+    }
+
+    body[data-theme="studio"] .ai-grid {
+        grid-template-columns: 1fr;
+    }
 }
 
 body[data-theme="linux"] .header {

@@ -1,5 +1,8 @@
 /* ===== Settings Container (Horizontal Layout) ===== */
 .settings-container.horizontal-layout {
+    --text-primary: #ffffff;
+    --text-secondary: rgba(255, 255, 255, 0.84);
+    --text-muted: rgba(255, 255, 255, 0.56);
     display: flex;
     width: 100%;
     max-width: 800px;
@@ -216,7 +219,7 @@
 
 .theme-grid {
     display: grid;
-    grid-template-columns: repeat(2, minmax(0, 1fr));
+    grid-template-columns: repeat(3, minmax(0, 1fr));
     gap: 12px;
 }
 
@@ -297,6 +300,45 @@
     box-shadow: 0 0 8px rgba(103, 232, 249, 0.45);
 }
 
+.theme-preview-studio {
+    position: relative;
+    background:
+        linear-gradient(90deg, rgba(148, 163, 184, 0.12) 1px, transparent 1px),
+        linear-gradient(180deg, rgba(148, 163, 184, 0.1) 1px, transparent 1px),
+        linear-gradient(135deg, #0f1720 0%, #18232d 54%, #152823 100%);
+    background-size: 14px 14px, 14px 14px, auto;
+}
+
+.theme-preview-studio::before {
+    content: '';
+    position: absolute;
+    top: 10px;
+    left: 8px;
+    width: 11px;
+    height: 38px;
+    border-radius: 8px;
+    background: linear-gradient(180deg, #2dd4bf, #60a5fa);
+    border: 1px solid rgba(238, 246, 244, 0.14);
+}
+
+.theme-preview-studio span {
+    margin-left: 14px;
+    background: rgba(238, 246, 244, 0.78);
+}
+
+.theme-preview-studio span:first-child {
+    width: 68%;
+}
+
+.theme-preview-studio span:nth-child(2) {
+    width: 78%;
+}
+
+.theme-preview-studio span:nth-child(3) {
+    width: 52%;
+    background: #fb923c;
+}
+
 .theme-meta {
     min-width: 0;
     display: flex;
@@ -314,6 +356,12 @@
     color: var(--text-muted);
     font-size: 11px;
     line-height: 1.35;
+}
+
+@media (max-width: 780px) {
+    .theme-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
 }
 
 @media (max-width: 620px) {
@@ -456,8 +504,27 @@ input:checked + .toggle-slider:before {
 }
 
 .color-swatch.active {
-    border-color: white;
-    box-shadow: 0 0 0 2px rgba(99, 102, 241, 0.5);
+    border-color: #67e8f9;
+    box-shadow: 0 0 0 2px rgba(103, 232, 249, 0.32), 0 8px 18px rgba(0, 0, 0, 0.22);
+}
+
+.color-swatch.active::after {
+    content: '\2713';
+    position: absolute;
+    right: 6px;
+    bottom: 6px;
+    width: 18px;
+    height: 18px;
+    border-radius: 50%;
+    background: #0f172a;
+    color: #67e8f9;
+    border: 1px solid rgba(103, 232, 249, 0.65);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 12px;
+    font-weight: 800;
+    line-height: 1;
 }
 
 .input-group {
