@@ -1,8 +1,13 @@
 <div>
     <h3>Temp Mail (Mail.tm)</h3>
-    <div style="display: flex; gap: 10px; margin-bottom: 1rem;">
-        <button id="createMailBtn">Tạo mail ảo mới</button>
-        <button id="downloadMailBtn" style="display:none; background: var(--hover-bg); color: var(--text-primary); border: 1px solid var(--border-color);">Tải về</button>
+    <div style="display: flex; gap: 8px; margin-bottom: 1rem; flex-wrap: wrap;">
+        <button id="createMailBtn" class="btn btn-primary" style="flex: 1;">Tạo mail mới</button>
+        <button id="refreshMailBtn" class="btn btn-secondary" style="display:none; padding: 6px 12px;" title="Làm mới hộp thư">
+            <i class="fa-solid fa-rotate-left"></i> Làm mới
+        </button>
+        <button id="downloadMailBtn" class="btn btn-secondary" style="display:none; padding: 6px 12px;" title="Lưu tài khoản">
+            <i class="fa-solid fa-download"></i> Lưu
+        </button>
     </div>
     
     <div id="mailInfo" class="output-box" style="margin-bottom: 1rem; display:none;"></div>

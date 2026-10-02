@@ -1,34 +1,14 @@
+// ===== New Tab Entry Point (ES Modules) =====
+import { initClock } from './modules/clock.js';
+import { initSearch, SEARCH_ENGINES } from './modules/search.js';
+import { initTodos, renderTodos, saveTodos } from './modules/todos.js';
+import { THEMES, DEFAULT_THEME_ID, applyTheme, applyBackground, setPageBackground, getCustomImages, saveCustomImages } from './modules/background.js';
+import { initFaviconCache, applyShortcutImage, cleanupFaviconCache, createLetterIcon, getDomainFromUrl } from './modules/favicons.js';
+
 // ===== Cấu hình =====
 const CONFIG = {
-    themes: [
-        {
-            id: 'default',
-            name: 'Mặc định',
-            description: 'Glass tím xanh hiện tại',
-            icon: 'fa-wand-magic-sparkles',
-            defaultBackground: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)'
-        },
-        {
-            id: 'linux',
-            name: 'Linux Terminal',
-            description: 'Tối, sắc nét, xanh terminal',
-            icon: 'fa-terminal',
-            defaultBackground: 'linear-gradient(135deg, #07130f 0%, #0d1f1a 45%, #111827 100%)'
-        },
-        {
-            id: 'studio',
-            name: 'Studio Focus',
-            description: 'Tối, gọn, dạng studio tập trung',
-            icon: 'fa-table-columns',
-            defaultBackground: 'linear-gradient(135deg, #0f1720 0%, #18232d 48%, #152823 100%)'
-        }
-    ],
-    engines: {
-        google: { url: 'https://www.google.com/search?q=', name: 'Google' },
-        bing: { url: 'https://www.bing.com/search?q=', name: 'Bing' },
-        youtube: { url: 'https://www.youtube.com/results?search_query=', name: 'YouTube' },
-        duckduckgo: { url: 'https://duckduckgo.com/?q=', name: 'DuckDuckGo' }
-    },
+    themes: THEMES,
+    engines: SEARCH_ENGINES,
     defaultShortcuts: [
         { name: 'Google', url: 'https://google.com' },
         { name: 'YouTube', url: 'https://youtube.com' },
@@ -57,163 +37,23 @@ let state = {
     todos: [],
     currentEngine: 'google'
 };
-const DEFAULT_NEWTAB_THEME = 'default';
-let slideshowTimer = null;
-let currentSlideIndex = 0;
-const FAVICON_CACHE_KEY = 'edgeHomeFaviconCache';
-const FAVICON_CLEANUP_KEY = 'edgeHomeFaviconCacheCleanupAt';
-const FAVICON_CLEANUP_INTERVAL = 7 * 24 * 60 * 60 * 1000;
-const FAVICON_MAX_AGE = 90 * 24 * 60 * 60 * 1000;
-const FAVICON_MAX_ENTRIES = 100;
-let faviconCache = {};
-let faviconSaveTimer = null;
-const faviconFetches = new Map();
-
-function createLetterIcon(label, background = '#6366f1') {
-    const text = escapeSvgText(String(label || '?').trim().charAt(0).toUpperCase() || '?');
-    const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" viewBox="0 0 64 64"><rect width="64" height="64" rx="16" fill="${background}"/><text x="32" y="40" text-anchor="middle" font-family="Arial,sans-serif" font-size="28" font-weight="700" fill="white">${text}</text></svg>`;
-    return `data:image/svg+xml;charset=UTF-8,${encodeURIComponent(svg)}`;
-}
-
-function escapeSvgText(value) {
-    return value.replace(/[&<>"']/g, char => ({
-        '&': '&amp;',
-        '<': '&lt;',
-        '>': '&gt;',
-        '"': '&quot;',
-        "'": '&apos;'
-    }[char]));
-}
-
-function shortcutIcon(url, fallbackName = '') {
-    const domain = getDomainFromUrl(url);
-    if (domain) return faviconUrlForDomain(domain);
-    return createLetterIcon(fallbackName, '#334155');
-}
-
-function getDomainFromUrl(url) {
-    try {
-        return new URL(url).hostname.replace(/^www\./, '');
-    } catch {
-        return '';
-    }
-}
-
-function faviconUrlForDomain(domain) {
-    return `https://www.google.com/s2/favicons?domain=${encodeURIComponent(domain)}&sz=128`;
-}
-
-function applyShortcutImage(image, url, fallbackName = '') {
-    const domain = getDomainFromUrl(url);
-    image.alt = fallbackName || '';
-    image.loading = 'lazy';
-    image.referrerPolicy = 'no-referrer';
-    if (!domain) {
-        image.src = createLetterIcon(fallbackName, '#334155');
-        return;
-    }
-
-    const cached = faviconCache[domain];
-    if (cached?.dataUrl) {
-        cached.lastUsedAt = Date.now();
-        image.src = cached.dataUrl;
-        scheduleFaviconCacheSave();
-        return;
-    }
-
-    const remoteUrl = faviconUrlForDomain(domain);
-    image.src = remoteUrl;
-    image.onerror = () => {
-        image.onerror = null;
-        image.src = createLetterIcon(fallbackName, '#334155');
-    };
-    cacheFavicon(domain, remoteUrl, image).catch(() => {});
-}
-
-async function cacheFavicon(domain, remoteUrl, imageToUpdate) {
-    if (faviconCache[domain]?.dataUrl) return faviconCache[domain].dataUrl;
-    if (faviconFetches.has(domain)) return faviconFetches.get(domain);
-
-    const task = (async () => {
-        const response = await fetch(remoteUrl, { cache: 'force-cache' });
-        if (!response.ok) throw new Error('Khong tai duoc favicon');
-
-        const blob = await response.blob();
-        if (!blob.type.startsWith('image/') || blob.size > 128 * 1024) {
-            throw new Error('Favicon khong hop le');
-        }
-
-        const dataUrl = await blobToDataUrl(blob);
-        faviconCache[domain] = {
-            dataUrl,
-            updatedAt: Date.now(),
-            lastUsedAt: Date.now()
-        };
-        scheduleFaviconCacheSave();
-        if (imageToUpdate && imageToUpdate.isConnected) imageToUpdate.src = dataUrl;
-        return dataUrl;
-    })().finally(() => faviconFetches.delete(domain));
-
-    faviconFetches.set(domain, task);
-    return task;
-}
-
-function blobToDataUrl(blob) {
-    return new Promise((resolve, reject) => {
-        const reader = new FileReader();
-        reader.onload = () => resolve(reader.result);
-        reader.onerror = () => reject(reader.error);
-        reader.readAsDataURL(blob);
-    });
-}
-
-function scheduleFaviconCacheSave() {
-    if (faviconSaveTimer) clearTimeout(faviconSaveTimer);
-    faviconSaveTimer = setTimeout(() => {
-        chrome.storage.local.set({ [FAVICON_CACHE_KEY]: faviconCache });
-        faviconSaveTimer = null;
-    }, 500);
-}
-
-async function cleanupFaviconCache(force = false) {
-    const now = Date.now();
-    const { [FAVICON_CLEANUP_KEY]: lastCleanup = 0 } = await chrome.storage.local.get(FAVICON_CLEANUP_KEY);
-    if (!force && now - lastCleanup < FAVICON_CLEANUP_INTERVAL) return;
-
-    const usedDomains = new Set([
-        'google.com',
-        'bing.com',
-        'youtube.com',
-        'duckduckgo.com'
-    ]);
-    state.shortcuts.forEach(shortcut => {
-        const domain = getDomainFromUrl(shortcut.url);
-        if (domain) usedDomains.add(domain);
-    });
-
-    const freshEntries = Object.entries(faviconCache)
-        .filter(([domain, entry]) => {
-            const lastUsedAt = entry?.lastUsedAt || entry?.updatedAt || 0;
-            return usedDomains.has(domain) && now - lastUsedAt <= FAVICON_MAX_AGE && entry?.dataUrl;
-        })
-        .sort((a, b) => (b[1].lastUsedAt || b[1].updatedAt || 0) - (a[1].lastUsedAt || a[1].updatedAt || 0))
-        .slice(0, FAVICON_MAX_ENTRIES);
-
-    faviconCache = Object.fromEntries(freshEntries);
-    await chrome.storage.local.set({
-        [FAVICON_CACHE_KEY]: faviconCache,
-        [FAVICON_CLEANUP_KEY]: now
-    });
-}
+const DEFAULT_NEWTAB_THEME = DEFAULT_THEME_ID;
 
 // ===== Khởi tạo =====
 document.addEventListener('DOMContentLoaded', async () => {
     await loadData();
-    initClock();
-    renderSearchEngineSelect(); // Gọi render trước khi init search
-    initSearch();
+    initClock(() => state.settings.userName);
+     // Gọi render trước khi init search
+    initSearch({
+        getCurrentEngine: () => state.currentEngine,
+        onEngineChange: (engine) => {
+            state.currentEngine = engine;
+            saveSettings({ searchEngine: engine });
+        },
+        applyIcon: applyShortcutImage
+    });
     initShortcuts();
-    initTodos();
+    initTodos(state.todos);
     initQuote();
     applySettings();
     // Wire settings button on new tab
@@ -232,74 +72,12 @@ document.addEventListener('DOMContentLoaded', async () => {
         });
     }
 });
-// Render select menu với icon cho từng engine
-function renderSearchEngineSelect() {
-    const dropdown = document.getElementById('search-engine-dropdown');
-    const dropbtn = document.getElementById('current-engine-btn');
-    const currentIcon = document.getElementById('current-engine-icon');
-    const list = document.getElementById('engine-dropdown-list');
-    
-    if (!dropdown || !dropbtn || !list) return;
-
-    const engines = [
-        { value: 'google', url: 'https://www.google.com', name: 'Google' },
-        { value: 'bing', url: 'https://www.bing.com', name: 'Bing' },
-        { value: 'youtube', url: 'https://www.youtube.com', name: 'YouTube' },
-        { value: 'duckduckgo', url: 'https://duckduckgo.com', name: 'DuckDuckGo' }
-    ];
-
-    // Khởi tạo icon hiện tại
-    const current = engines.find(e => e.value === state.currentEngine) || engines[0];
-    applyShortcutImage(currentIcon, current.url, current.name);
-
-    // Render danh sách icon
-    list.innerHTML = '';
-    engines.forEach(engine => {
-        const item = document.createElement('div');
-        item.className = `engine-item ${engine.value === state.currentEngine ? 'active' : ''}`;
-        const icon = document.createElement('img');
-        icon.title = engine.name;
-        applyShortcutImage(icon, engine.url, engine.name);
-        item.appendChild(icon);
-        item.addEventListener('click', () => {
-            state.currentEngine = engine.value;
-            applyShortcutImage(currentIcon, engine.url, engine.name);
-            saveSettings({ searchEngine: state.currentEngine });
-            
-            // Update active state
-            document.querySelectorAll('.engine-item').forEach(i => i.classList.remove('active'));
-            item.classList.add('active');
-            
-            list.classList.remove('show');
-            dropdown.classList.remove('open');
-        });
-        list.appendChild(item);
-    });
-
-    // Toggle dropdown
-    dropbtn.addEventListener('click', (e) => {
-        e.stopPropagation();
-        list.classList.toggle('show');
-        dropdown.classList.toggle('open');
-    });
-
-    // Đóng khi click bên ngoài
-    document.addEventListener('click', () => {
-        list.classList.remove('show');
-        dropdown.classList.remove('open');
-    });
-}
-
-function updateSelectIcon(select) {
-    // Hàm này không còn dùng nữa vì đã chuyển sang custom dropdown
-}
-
 // ===== Load dữ liệu =====
 async function loadData() {
     try {
         // Migrate from sync to local if needed, or just read local
         // We prefer local for settings now because of potential image data
-        const localKeys = ['edgeHomeSettings', 'edgeHomeShortcuts', 'edgeHomeTodos', 'edgeHomeSlideIndex', FAVICON_CACHE_KEY];
+        const localKeys = ['edgeHomeSettings', 'edgeHomeShortcuts', 'edgeHomeTodos', 'edgeHomeSlideIndex', 'edgeHomeFaviconCache'];
         const localResult = await chrome.storage.local.get(localKeys);
         const syncResult = await chrome.storage.sync.get(['edgeHomeSettings', 'edgeHomeShortcuts', 'edgeHomeTodos']);
         
@@ -317,7 +95,7 @@ async function loadData() {
         state.todos = localResult.edgeHomeTodos || syncResult.edgeHomeTodos || [];
         state.currentEngine = state.settings.searchEngine || 'google';
         currentSlideIndex = localResult.edgeHomeSlideIndex || 0;
-        faviconCache = localResult[FAVICON_CACHE_KEY] || {};
+        initFaviconCache(localResult.edgeHomeFaviconCache || {});
         cleanupFaviconCache().catch(() => {});
     } catch (e) {
         console.error('Lỗi load dữ liệu:', e);
@@ -328,359 +106,12 @@ async function loadData() {
 function applySettings() {
     const s = state.settings;
     applyTheme(s.newtabTheme || DEFAULT_NEWTAB_THEME);
+    applyBackground(s);
     toggle('clock-section', s.showClock ?? true);
     toggle('search-section', s.showSearch ?? true);
     toggle('shortcuts-section', s.showShortcuts ?? true);
     toggle('ai-section', s.showAiTools ?? true);
     toggle('quote-section', s.showQuote ?? true);
-
-    // Stop existing slideshow if any
-    if (slideshowTimer) {
-        clearInterval(slideshowTimer);
-        slideshowTimer = null;
-    }
-
-    // Apply Background
-    const bgType = s.bgType || 'gradient';
-    const bgValue = s.bgValue;
-    
-    if (bgType === 'slideshow') {
-        const list = (s.bgSlideshowList || []).filter(item => item.trim());
-        if (list.length > 0) {
-            // "Change on new tab" logic: increment index and save
-            if (s.bgSlideshowOnNewTab) {
-                currentSlideIndex = (currentSlideIndex + 1) % list.length;
-                chrome.storage.local.set({ edgeHomeSlideIndex: currentSlideIndex });
-            }
-
-            if (currentSlideIndex >= list.length) currentSlideIndex = 0;
-            setPageBackground(list[currentSlideIndex]);
-            
-            const interval = (s.bgSlideshowInterval || 30) * 1000;
-            // Only start timer if interval > 0 and there are multiple slides
-            if (interval > 0 && list.length > 1) {
-                slideshowTimer = setInterval(() => {
-                    currentSlideIndex = (currentSlideIndex + 1) % list.length;
-                    setPageBackground(list[currentSlideIndex]);
-                    chrome.storage.local.set({ edgeHomeSlideIndex: currentSlideIndex });
-                }, interval);
-            }
-        } else {
-            // Default if list is empty
-            setPageBackground(getCurrentTheme().defaultBackground);
-        }
-    } else {
-        setPageBackground(bgValue, bgType);
-    }
-}
-
-function getCurrentTheme() {
-    const themeId = state.settings.newtabTheme || DEFAULT_NEWTAB_THEME;
-    return CONFIG.themes.find(theme => theme.id === themeId) || CONFIG.themes[0];
-}
-
-function applyTheme(themeId) {
-    const nextTheme = CONFIG.themes.some(theme => theme.id === themeId) ? themeId : DEFAULT_NEWTAB_THEME;
-    document.body.dataset.theme = nextTheme;
-}
-
-function setPageBackground(value, type) {
-    if (!value) {
-        document.body.style.backgroundImage = getCurrentTheme().defaultBackground;
-        document.body.style.backgroundColor = 'var(--bg-primary)';
-        return;
-    }
-
-    // Infer type if not provided (for slideshow)
-    if (!type) {
-        if (value.startsWith('linear-gradient') || value.startsWith('radial-gradient')) {
-            type = 'gradient';
-        } else if (value.startsWith('url(') || value.startsWith('data:') || value.includes('://')) {
-            type = 'image';
-            if (!value.startsWith('url(')) value = `url('${value}')`;
-        } else if (value.startsWith('#') || value.startsWith('rgb')) {
-            type = 'solid';
-        } else {
-            type = 'gradient'; // fallback
-        }
-    }
-
-    if (type === 'image') {
-        const imgUrl = value.match(/url\(['"]?(.*?)['"]?\)/)?.[1] || value;
-        // Basic check to avoid re-setting same image
-        const currentBg = document.body.style.backgroundImage.replace(/['"]/g, '');
-        const targetBg = value.replace(/['"]/g, '');
-        if (currentBg === targetBg) return;
-
-        if (imgUrl.startsWith('http') || imgUrl.startsWith('data:')) {
-            const img = new Image();
-            img.onload = () => {
-                // Apply background with optimal settings
-                document.body.style.backgroundImage = value;
-                document.body.style.backgroundColor = 'var(--bg-primary)';
-                document.body.style.backgroundSize = 'cover';
-                document.body.style.backgroundPosition = 'center center';
-                document.body.style.backgroundRepeat = 'no-repeat';
-                document.body.style.backgroundAttachment = 'fixed';
-                // Use lighten blend mode to enhance image visibility without affecting text
-                document.body.style.backgroundBlendMode = 'lighten';
-            };
-            img.src = imgUrl;
-        } else {
-            document.body.style.backgroundImage = value;
-            document.body.style.backgroundColor = 'var(--bg-primary)';
-            document.body.style.backgroundSize = 'cover';
-            document.body.style.backgroundPosition = 'center center';
-            document.body.style.backgroundBlendMode = 'lighten';
-        }
-    } else if (type === 'solid') {
-        if (document.body.style.backgroundColor === value && (document.body.style.backgroundImage === 'none' || !document.body.style.backgroundImage)) return;
-        document.body.style.backgroundColor = value;
-        document.body.style.backgroundImage = 'none';
-        document.body.style.backgroundBlendMode = 'normal';
-    } else {
-        const currentBg = document.body.style.backgroundImage.replace(/\s+/g, '');
-        const targetBg = value.replace(/\s+/g, '');
-        if (currentBg === targetBg) return;
-        
-        document.body.style.backgroundImage = value;
-        // For gradients, keep the theme background color underneath to support transparency
-        document.body.style.backgroundColor = 'var(--bg-primary)';
-        document.body.style.backgroundBlendMode = 'normal';
-    }
-}
-
-function toggle(id, show) {
-    document.getElementById(id)?.classList.toggle('hidden', !show);
-}
-
-function initTodos() {
-    const panel = document.getElementById('todo-panel');
-    const closeBtn = document.getElementById('close-todo');
-    const form = document.getElementById('todo-form');
-    const input = document.getElementById('todo-input');
-    const list = document.getElementById('todo-list');
-
-    if (!panel || !closeBtn || !form || !input || !list) return;
-
-    closeBtn.addEventListener('click', () => panel.classList.remove('open'));
-    form.addEventListener('submit', async (event) => {
-        event.preventDefault();
-        const text = input.value.trim();
-        if (!text) return;
-
-        state.todos.push({
-            id: crypto.randomUUID ? crypto.randomUUID() : `${Date.now()}-${Math.random()}`,
-            text,
-            done: false,
-            createdAt: Date.now()
-        });
-        input.value = '';
-        await saveTodos();
-        renderTodos();
-    });
-
-    renderTodos();
-}
-
-function renderTodos() {
-    const list = document.getElementById('todo-list');
-    const count = document.getElementById('todo-count');
-    if (!list || !count) return;
-
-    list.replaceChildren();
-    state.todos.forEach(todo => {
-        const item = document.createElement('div');
-        item.className = `todo-item ${todo.done ? 'done' : ''}`;
-
-        const checkbox = document.createElement('button');
-        checkbox.type = 'button';
-        checkbox.className = 'todo-checkbox';
-        checkbox.title = todo.done ? 'Đánh dấu chưa xong' : 'Đánh dấu đã xong';
-        checkbox.addEventListener('click', async () => {
-            todo.done = !todo.done;
-            await saveTodos();
-            renderTodos();
-        });
-
-        const text = document.createElement('span');
-        text.className = 'todo-text';
-        text.textContent = todo.text;
-
-        const deleteBtn = document.createElement('button');
-        deleteBtn.type = 'button';
-        deleteBtn.className = 'todo-delete';
-        deleteBtn.title = 'Xóa';
-        const icon = document.createElement('i');
-        icon.className = 'fa-solid fa-trash';
-        deleteBtn.appendChild(icon);
-        deleteBtn.addEventListener('click', async () => {
-            state.todos = state.todos.filter(itemToKeep => itemToKeep.id !== todo.id);
-            await saveTodos();
-            renderTodos();
-        });
-
-        item.append(checkbox, text, deleteBtn);
-        list.appendChild(item);
-    });
-
-    const remaining = state.todos.filter(todo => !todo.done).length;
-    count.textContent = `${remaining} việc`;
-}
-
-async function saveTodos() {
-    await chrome.storage.local.set({ edgeHomeTodos: state.todos });
-}
-
-// ===== Đồng hồ =====
-function initClock() {
-    const fullDateElement = document.getElementById('full-date');
-    fullDateElement.addEventListener('click', openCalendar);
-    fullDateElement.style.cursor = 'pointer';
-    
-    const update = () => {
-        const now = new Date();
-        const h = now.getHours().toString().padStart(2, '0');
-        const m = now.getMinutes().toString().padStart(2, '0');
-        
-        document.getElementById('time').textContent = `${h}:${m}`;
-        document.getElementById('day').textContent = now.toLocaleDateString('vi-VN', { weekday: 'long' });
-        document.getElementById('full-date').textContent = now.toLocaleDateString('vi-VN', { 
-            day: '2-digit', month: 'long', year: 'numeric' 
-        });
-        
-        updateGreeting(now.getHours());
-    };
-    update();
-    setInterval(update, 1000);
-}
-
-function updateGreeting(hour) {
-    let text = 'Xin chào';
-    if (hour >= 5 && hour < 12) text = 'Chào buổi sáng';
-    else if (hour >= 12 && hour < 18) text = 'Chào buổi chiều';
-    else text = 'Chào buổi tối';
-    
-    const name = state.settings.userName;
-    document.getElementById('greeting').textContent = name ? `${text}, ${name}!` : `${text}!`;
-}
-
-// ===== Lịch =====
-let currentCalendarDate = new Date();
-
-function openCalendar() {
-    currentCalendarDate = new Date(); // Reset to current month
-    const modal = document.getElementById('calendar-modal');
-    modal.classList.add('open');
-    
-    const closeBtn = document.getElementById('calendar-close');
-    closeBtn.addEventListener('click', () => modal.classList.remove('open'));
-    modal.querySelector('.modal-overlay').addEventListener('click', () => modal.classList.remove('open'));
-    
-    // Navigation
-    document.getElementById('prev-month').addEventListener('click', () => {
-        currentCalendarDate.setMonth(currentCalendarDate.getMonth() - 1);
-        renderCalendar();
-    });
-    
-    document.getElementById('next-month').addEventListener('click', () => {
-        currentCalendarDate.setMonth(currentCalendarDate.getMonth() + 1);
-        renderCalendar();
-    });
-    
-    renderCalendar();
-}
-
-function renderCalendar() {
-    const year = currentCalendarDate.getFullYear();
-    const month = currentCalendarDate.getMonth();
-    
-    document.getElementById('calendar-title').textContent = 
-        `Tháng ${month + 1}, ${year}`;
-    
-    const daysContainer = document.getElementById('calendar-days');
-    daysContainer.innerHTML = '';
-    
-    const firstDay = new Date(year, month, 1);
-    const lastDay = new Date(year, month + 1, 0);
-    const startDate = new Date(firstDay);
-    startDate.setDate(startDate.getDate() - firstDay.getDay());
-    
-    const today = new Date();
-    const isCurrentMonth = today.getFullYear() === year && today.getMonth() === month;
-    
-    for (let i = 0; i < 42; i++) {
-        const date = new Date(startDate);
-        date.setDate(startDate.getDate() + i);
-        
-        const dayDiv = document.createElement('div');
-        dayDiv.className = 'calendar-day';
-        
-        if (date.getMonth() !== month) {
-            dayDiv.classList.add('other-month');
-        }
-        
-        if (isCurrentMonth && date.getDate() === today.getDate() && date.getMonth() === today.getMonth()) {
-            dayDiv.classList.add('today');
-        }
-        
-        dayDiv.innerHTML = `
-            <div class="calendar-day-number">${date.getDate()}</div>
-        `;
-        
-        daysContainer.appendChild(dayDiv);
-    }
-}
-
-// ===== Tìm kiếm =====
-function initSearch() {
-    const form = document.getElementById('search-form');
-    const input = document.getElementById('search-input');
-    const voiceBtn = document.getElementById('voice-btn');
-    const imageBtn = document.getElementById('image-btn');
-    
-    // Submit form
-    form.addEventListener('submit', (e) => {
-        e.preventDefault();
-        const q = input.value.trim();
-        if (q) {
-            window.location.href = CONFIG.engines[state.currentEngine].url + encodeURIComponent(q);
-        }
-    });
-    
-    // Tìm kiếm giọng nói
-    if ('webkitSpeechRecognition' in window) {
-        voiceBtn.addEventListener('click', () => {
-            const recognition = new webkitSpeechRecognition();
-            recognition.lang = 'vi-VN';
-            recognition.start();
-            
-            voiceBtn.innerHTML = '<i class="fa-solid fa-circle-notch fa-spin"></i>';
-            
-            recognition.onresult = (e) => {
-                input.value = e.results[0][0].transcript;
-                voiceBtn.innerHTML = '<i class="fa-solid fa-microphone"></i>';
-            };
-            
-            recognition.onerror = () => {
-                voiceBtn.innerHTML = '<i class="fa-solid fa-microphone"></i>';
-            };
-        });
-    } else {
-        voiceBtn.style.display = 'none';
-    }
-    
-    // Tìm kiếm hình ảnh
-    imageBtn.addEventListener('click', () => {
-        const q = input.value.trim();
-        if (q) {
-            // Search images with text
-            window.location.href = `https://www.google.com/search?tbm=isch&q=${encodeURIComponent(q)}`;
-        } else {
-            // Open Google Lens for direct image search
-            window.location.href = 'https://lens.google.com/';
-        }
-    });
 }
 
 // ===== Lối tắt =====
@@ -1662,15 +1093,6 @@ async function initSlideshowGallery(root) {
     
     // Initial render
     renderGallery();
-}
-
-async function getCustomImages() {
-    const result = await chrome.storage.local.get('customImages');
-    return result.customImages || [];
-}
-
-async function saveCustomImages(images) {
-    await chrome.storage.local.set({ customImages: images });
 }
 
 function showStatus(root, msg) {

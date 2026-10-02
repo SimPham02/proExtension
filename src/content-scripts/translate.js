@@ -5,17 +5,17 @@
   window.__proExtTranslateScriptLoaded = true;
 
   const DEFAULT_LANG = 'none';
-  const TRANSLATE_TIMEOUT_MS = 10000;
-  const SELECTION_DEBOUNCE_MS = 200;
+  const SELECTION_DEBOUNCE_MS = 250;
 
   let initialized = false;
   let currentLang = DEFAULT_LANG;
-  let container = null;
+  let hostEl = null;
+  let shadowRoot = null;
+  let cardEl = null;
   let textEl = null;
   let timer = null;
   let lastText = '';
   let requestId = 0;
-  let currentAbortController = null;
 
   const chromeStorage = chrome?.storage;
 
@@ -24,7 +24,7 @@
     if (text) return text;
 
     const activeElement = document.activeElement;
-    const isTextInput = activeElement?.tagName === 'TEXTAREA' || activeElement?.type === 'text';
+    const isTextInput = activeElement?.tagName === 'TEXTAREA' || (activeElement?.tagName === 'INPUT' && activeElement?.type === 'text');
     if (!isTextInput) return '';
 
     const { selectionStart, selectionEnd, value } = activeElement;
@@ -32,48 +32,49 @@
     return value.substring(selectionStart, selectionEnd).trim();
   }
 
-  async function translate(text, lang, signal) {
-    const url = `https://translate.googleapis.com/translate_a/single?client=gtx&sl=auto&tl=${encodeURIComponent(lang)}&dt=t&q=${encodeURIComponent(text)}`;
-    const response = await fetch(url, { signal });
-    if (!response.ok) return null;
-
-    const data = await response.json();
-    return (data[0] || []).map(part => part[0]).join('') || '';
-  }
-
   function positionNearSelection() {
     const selection = window.getSelection();
-    if (!selection || selection.rangeCount === 0 || !container) return;
+    if (!selection || selection.rangeCount === 0 || !cardEl || !hostEl) return;
 
-    const rect = selection.getRangeAt(0).getBoundingClientRect();
-    const scrollX = window.scrollX || window.pageXOffset;
-    const scrollY = window.scrollY || window.pageYOffset;
-    let top = rect.bottom + scrollY + 8;
-    let left = rect.left + scrollX;
+    try {
+      const range = selection.getRangeAt(0);
+      const rect = range.getBoundingClientRect();
+      if (!rect || (rect.width === 0 && rect.height === 0)) return;
 
-    container.style.display = 'block';
-    container.style.visibility = 'hidden';
-    const popupRect = container.getBoundingClientRect();
-    container.style.visibility = 'visible';
+      const scrollX = window.scrollX || window.pageXOffset || 0;
+      const scrollY = window.scrollY || window.pageYOffset || 0;
 
-    if (rect.bottom + popupRect.height + 20 > window.innerHeight) {
-      top = rect.top + scrollY - popupRect.height - 8;
+      cardEl.style.display = 'flex';
+      cardEl.style.visibility = 'hidden';
+      const popupRect = cardEl.getBoundingClientRect();
+      cardEl.style.visibility = 'visible';
+
+      let top = rect.bottom + scrollY + 8;
+      let left = rect.left + scrollX;
+
+      // Tránh tràn viền dưới màn hình
+      if (rect.bottom + popupRect.height + 24 > window.innerHeight) {
+        top = rect.top + scrollY - popupRect.height - 8;
+      }
+      // Tránh tràn viền phải màn hình
+      if (left + popupRect.width > window.innerWidth + scrollX - 16) {
+        left = window.innerWidth + scrollX - popupRect.width - 16;
+      }
+      if (left < scrollX + 10) left = scrollX + 10;
+      if (top < scrollY + 10) top = scrollY + 10;
+
+      cardEl.style.top = `${top}px`;
+      cardEl.style.left = `${left}px`;
+    } catch {
+      // Fallback an toàn nếu selection range không truy cập được
     }
-    if (left + popupRect.width > window.innerWidth + scrollX - 10) {
-      left = window.innerWidth + scrollX - popupRect.width - 10;
-    }
-    if (left < scrollX + 10) left = scrollX + 10;
-    if (top < scrollY + 10) top = scrollY + 10;
-
-    container.style.top = `${top}px`;
-    container.style.left = `${left}px`;
   }
 
   async function handleSelection() {
-    if (!container || !textEl || currentLang === DEFAULT_LANG) return;
+    if (!cardEl || currentLang === DEFAULT_LANG) return;
 
     const text = getSelectedText();
-    if (!text) {
+    if (!text || text.length < 2) {
       hidePopup();
       lastText = '';
       return;
@@ -84,24 +85,33 @@
     const activeRequestId = requestId + 1;
     requestId = activeRequestId;
 
-    currentAbortController?.abort();
-    currentAbortController = new AbortController();
-    const timeout = setTimeout(() => currentAbortController.abort(), TRANSLATE_TIMEOUT_MS);
-
-    textEl.textContent = 'Dang dich...';
+    textEl.textContent = 'Đang dịch...';
     positionNearSelection();
 
+    // Ủy thác việc fetch sang Background Service Worker để tránh vi phạm CSP của trang web
     try {
-      const translated = await translate(text, currentLang, currentAbortController.signal);
-      if (activeRequestId === requestId) {
-        textEl.textContent = translated ?? 'Khong dich duoc';
-      }
+      chrome.runtime.sendMessage(
+        { type: 'translate', text, lang: currentLang },
+        (response) => {
+          if (activeRequestId !== requestId) return;
+
+          if (chrome.runtime.lastError) {
+            textEl.textContent = 'Lỗi kết nối extension';
+            return;
+          }
+
+          if (response?.success) {
+            textEl.textContent = response.result || 'Không tìm thấy bản dịch';
+            positionNearSelection();
+          } else {
+            textEl.textContent = response?.error || 'Không dịch được';
+          }
+        }
+      );
     } catch {
       if (activeRequestId === requestId) {
-        textEl.textContent = 'Khong dich duoc';
+        textEl.textContent = 'Không dịch được';
       }
-    } finally {
-      clearTimeout(timeout);
     }
   }
 
@@ -112,108 +122,155 @@
 
   function initUI() {
     if (initialized) return;
-
     initialized = true;
     window.__proExtTranslateInstalled = true;
 
-    container = document.createElement('div');
-    container.setAttribute('data-proext-translate', '1');
-    Object.assign(container.style, {
-      position: 'absolute',
-      zIndex: '2147483647',
-      display: 'none',
-      fontFamily: 'sans-serif'
-    });
+    // Sử dụng Shadow DOM để cách ly hoàn toàn CSS của trang web
+    hostEl = document.createElement('div');
+    hostEl.id = 'pro-ext-translate-host';
+    hostEl.style.all = 'initial';
+    shadowRoot = hostEl.attachShadow({ mode: 'open' });
 
-    const card = document.createElement('div');
-    Object.assign(card.style, {
-      background: 'linear-gradient(180deg, rgba(20,20,20,0.98), rgba(30,30,30,0.98))',
-      color: '#fff',
-      padding: '10px 14px',
-      borderRadius: '8px',
-      maxWidth: '400px',
-      minWidth: '150px',
-      boxShadow: '0 8px 30px rgba(0,0,0,0.4)',
-      fontSize: '13px',
-      lineHeight: '1.4',
-      display: 'flex',
-      flexDirection: 'column',
-      gap: '8px'
-    });
+    const style = document.createElement('style');
+    style.textContent = `
+      :host {
+        all: initial;
+        z-index: 2147483647;
+      }
+      .translate-card {
+        position: absolute;
+        z-index: 2147483647;
+        display: none;
+        flex-direction: column;
+        gap: 8px;
+        background: #1e293b;
+        color: #f8fafc;
+        border: 1px solid rgba(255, 255, 255, 0.15);
+        border-radius: 8px;
+        padding: 10px 14px;
+        min-width: 160px;
+        max-width: 380px;
+        box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.5), 0 8px 10px -6px rgba(0, 0, 0, 0.3);
+        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+        font-size: 13px;
+        line-height: 1.45;
+        box-sizing: border-box;
+      }
+      .translate-card * {
+        box-sizing: border-box;
+      }
+      .translate-text {
+        white-space: pre-wrap;
+        word-break: break-word;
+        max-height: 200px;
+        overflow-y: auto;
+        color: #f1f5f9;
+      }
+      .translate-actions {
+        display: flex;
+        align-items: center;
+        justify-content: flex-end;
+        gap: 6px;
+        border-top: 1px solid rgba(255, 255, 255, 0.08);
+        padding-top: 6px;
+      }
+      .btn {
+        background: #334155;
+        color: #e2e8f0;
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        border-radius: 4px;
+        padding: 3px 8px;
+        font-size: 11px;
+        cursor: pointer;
+        transition: background 0.15s ease;
+      }
+      .btn:hover {
+        background: #475569;
+        color: #fff;
+      }
+      .btn-close {
+        background: transparent;
+        border: none;
+        color: #94a3b8;
+        font-size: 14px;
+        padding: 2px 6px;
+        cursor: pointer;
+      }
+      .btn-close:hover {
+        color: #fff;
+      }
+    `;
+
+    cardEl = document.createElement('div');
+    cardEl.className = 'translate-card';
 
     textEl = document.createElement('div');
-    Object.assign(textEl.style, { whiteSpace: 'pre-wrap', wordBreak: 'break-word' });
+    textEl.className = 'translate-text';
 
     const actions = document.createElement('div');
-    Object.assign(actions.style, {
-      fontSize: '11px',
-      display: 'flex',
-      justifyContent: 'flex-end',
-      gap: '8px'
-    });
+    actions.className = 'translate-actions';
 
-    const copyButton = document.createElement('button');
-    copyButton.textContent = 'Copy';
-    Object.assign(copyButton.style, {
-      cursor: 'pointer',
-      fontSize: '12px',
-      padding: '4px 8px',
-      background: 'rgba(255,255,255,0.04)',
-      border: '1px solid rgba(255,255,255,0.06)',
-      borderRadius: '4px',
-      color: '#fff'
-    });
+    const copyBtn = document.createElement('button');
+    copyBtn.className = 'btn';
+    copyBtn.textContent = 'Copy';
 
-    const closeButton = document.createElement('button');
-    closeButton.textContent = 'x';
-    Object.assign(closeButton.style, {
-      cursor: 'pointer',
-      fontSize: '14px',
-      padding: '2px 6px',
-      background: 'transparent',
-      border: 'none',
-      color: 'rgba(255,255,255,0.85)'
-    });
+    const closeBtn = document.createElement('button');
+    closeBtn.className = 'btn-close';
+    closeBtn.textContent = '✕';
+    closeBtn.title = 'Đóng';
 
-    actions.append(copyButton, closeButton);
-    card.append(textEl, actions);
-    container.appendChild(card);
-    document.body.appendChild(container);
+    actions.append(copyBtn, closeBtn);
+    cardEl.append(textEl, actions);
+
+    shadowRoot.append(style, cardEl);
+    document.body.appendChild(hostEl);
 
     document.addEventListener('mouseup', schedule);
     document.addEventListener('keyup', schedule);
     document.addEventListener('click', handleDocumentClick);
-    copyButton.addEventListener('click', copyTranslatedText);
-    closeButton.addEventListener('click', hidePopup);
-  }
 
-  function copyTranslatedText() {
-    navigator.clipboard?.writeText(textEl?.textContent || '').catch(() => {});
+    copyBtn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      const content = textEl?.textContent || '';
+      if (content && content !== 'Đang dịch...' && content !== 'Không dịch được') {
+        navigator.clipboard?.writeText(content).then(() => {
+          copyBtn.textContent = 'Đã copy!';
+          setTimeout(() => { copyBtn.textContent = 'Copy'; }, 1200);
+        }).catch(() => {});
+      }
+    });
+
+    closeBtn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      hidePopup();
+    });
   }
 
   function handleDocumentClick(event) {
-    if (container && !container.contains(event.target)) hidePopup();
+    if (hostEl && !hostEl.contains(event.target)) {
+      hidePopup();
+    }
   }
 
   function hidePopup() {
-    if (container) container.style.display = 'none';
+    if (cardEl) cardEl.style.display = 'none';
   }
 
   function disableTranslate() {
     hidePopup();
     lastText = '';
-    currentAbortController?.abort();
   }
 
   function destroyTranslate() {
     clearTimeout(timer);
-    currentAbortController?.abort();
     document.removeEventListener('mouseup', schedule);
     document.removeEventListener('keyup', schedule);
     document.removeEventListener('click', handleDocumentClick);
     chromeStorage?.onChanged?.removeListener(handleStorageChange);
-    container?.remove();
-    container = null;
+    hostEl?.remove();
+    hostEl = null;
+    shadowRoot = null;
+    cardEl = null;
     textEl = null;
     timer = null;
     initialized = false;

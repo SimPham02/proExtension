@@ -8,6 +8,14 @@ let currentNodes = [];
 let selectedIds = new Set();
 let currentSearchMode = 'flat'; 
 
+function debounce(fn, delay = 200) {
+    let timer = null;
+    return function (...args) {
+        clearTimeout(timer);
+        timer = setTimeout(() => fn.apply(this, args), delay);
+    };
+} 
+
 function el(tagName, options = {}) {
     const node = document.createElement(tagName);
     if (options.className) node.className = options.className;
@@ -415,21 +423,28 @@ function init() {
 
             const bulkDeleteBtn = document.getElementById('bulk-delete-btn');
             if (bulkDeleteBtn) {
-                bulkDeleteBtn.onclick = () => {
-                    if (confirm(`Delete ${selectedIds.size} items?`)) {
-                        const ids = Array.from(selectedIds);
-                        let deleted = 0;
-                        ids.forEach(id => {
-                            chrome.bookmarks.removeTree(id, () => {
-                                deleted++;
-                                if (deleted === ids.length) {
-                                    selectedIds.clear();
-                                    updateSelectionToolbar();
-                                    location.reload();
-                                }
-                            });
-                        });
-                    }
+                bulkDeleteBtn.onclick = async () => {
+                    const count = selectedIds.size;
+                    if (count === 0) return;
+                    if (!confirm(`Bạn có chắc chắn muốn xóa ${count} mục đã chọn?`)) return;
+
+                    const ids = Array.from(selectedIds);
+                    bulkDeleteBtn.disabled = true;
+
+                    // Sử dụng Promise để xóa đồng thời và xử lý lỗi an toàn
+                    await Promise.allSettled(ids.map(id => new Promise(resolve => {
+                        chrome.bookmarks.removeTree(id, () => resolve());
+                    })));
+
+                    // Cập nhật state trong bộ nhớ thay vì reload trang
+                    const deletedSet = new Set(ids);
+                    allBookmarksFlat = allBookmarksFlat.filter(item => !deletedSet.has(item.id));
+                    currentNodes = currentNodes.filter(item => !deletedSet.has(item.id));
+
+                    selectedIds.clear();
+                    updateSelectionToolbar();
+                    renderBookmarks(currentNodes);
+                    bulkDeleteBtn.disabled = false;
                 };
             }
 
@@ -448,7 +463,7 @@ function init() {
 
             const sidebarSearch = document.getElementById('sidebar-search-input');
             if (sidebarSearch) {
-                sidebarSearch.addEventListener('input', (e) => {
+                sidebarSearch.addEventListener('input', debounce((e) => {
                     const query = e.target.value.toLowerCase();
                     document.querySelectorAll('.folder-item').forEach(item => {
                         const title = item.dataset.title || '';
@@ -466,7 +481,7 @@ function init() {
                             item.style.display = 'none';
                         }
                     });
-                });
+                }, 200));
             }
 
             const mainSearch = document.getElementById('search-input');
@@ -490,8 +505,8 @@ function init() {
             }
 
             if (mainSearch) {
-                mainSearch.addEventListener('input', (e) => {
-                    const query = e.target.value.toLowerCase();
+                mainSearch.addEventListener('input', debounce((e) => {
+                    const query = e.target.value.toLowerCase().trim();
                     if (!query) {
                         navigateToFolder(currentFolderId, document.getElementById('current-folder-name').textContent);
                         return;
@@ -501,7 +516,7 @@ function init() {
                         (bm.url || '').toLowerCase().includes(query)
                     );
                     renderBookmarks(currentNodes, true);
-                });
+                }, 200));
             }
 
             const gridBtn = document.getElementById('grid-view-btn');

@@ -1,10 +1,21 @@
 {
-  "name": "pro Extensions",
-  "description": "Extension for everyone",
-  "version": "1.4",
+  "name": "Pro Extensions",
+  "description": "Extension for everyone - Multi-utility extension for Chrome & Edge",
+  "version": "1.4.1",
   "manifest_version": 3,
+  "icons": {
+    "16": "assets/icons/icon-16.png",
+    "32": "assets/icons/icon-32.png",
+    "48": "assets/icons/icon-48.png",
+    "128": "assets/icons/icon-128.png"
+  },
   "action": {
-    "default_icon": "icon.png",
+    "default_icon": {
+      "16": "assets/icons/icon-16.png",
+      "32": "assets/icons/icon-32.png",
+      "48": "assets/icons/icon-48.png",
+      "128": "assets/icons/icon-128.png"
+    },
     "default_popup": "src/popup/index.html"
   },
   "background": {
@@ -24,13 +35,10 @@
       "all_frames": false
     }
   ],
-  "permissions": ["bookmarks", "storage", "tabs", "activeTab", "scripting", "cookies"],
+  "permissions": ["bookmarks", "storage", "unlimitedStorage", "tabs", "activeTab", "scripting"],
   "host_permissions": [
-    "http://*/*",
-    "https://*/*",
     "https://api.mail.tm/*",
     "https://open.er-api.com/*",
-    "http://*.studocu.com/*",
-    "https://*.studocu.com/*"
+    "https://translate.googleapis.com/*"
   ]
 }
